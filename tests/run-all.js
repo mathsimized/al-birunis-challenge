@@ -18,6 +18,20 @@ const SUITE = [
   ['ba-import-parse', 'tests/ba-import-parse.js']
 ];
 
+/* HTML files, wherever they live, excluding the things we never ship. */
+function walkHtml(dir) {
+  const out = [];
+  (function walk(d) {
+    fs.readdirSync(d, { withFileTypes: true }).forEach((e) => {
+      if (['node_modules', '.git', 'tests'].includes(e.name)) return;
+      const full = path.join(d, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (e.name.endsWith('.html')) out.push(full);
+    });
+  })(dir);
+  return out;
+}
+
 let failed = 0;
 
 SUITE.forEach(([name, file]) => {
@@ -34,7 +48,41 @@ SUITE.forEach(([name, file]) => {
         });
       })(path.join(__dirname, '..'));
       files.forEach((f) => execFileSync(process.execPath, ['--check', f], { stdio: 'pipe' }));
+
+      /* Inline <script> blocks matter just as much. Three of them died on an
+         unescaped apostrophe once, and a page whose script throws a SyntaxError
+         does not half-work: it renders and then silently ignores every click.
+         Login looked like it did nothing at all. */
+      let inline = 0;
+      const broken = [];
+      files.filter((f) => f.endsWith('.html')).concat(
+        walkHtml(path.join(__dirname, '..'))
+      ).forEach((f) => {
+        const html = fs.readFileSync(f, 'utf8');
+        const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
+        let m;
+        while ((m = re.exec(html))) {
+          const code = m[1].trim();
+          if (!code) continue;
+          inline += 1;
+          const tmp = path.join(require('os').tmpdir(), 'abc-inline-' + inline + '.js');
+          fs.writeFileSync(tmp, code);
+          try {
+            execFileSync(process.execPath, ['--check', tmp], { stdio: 'pipe' });
+          } catch (e) {
+            broken.push(path.relative(path.join(__dirname, '..'), f) + ' — ' +
+              String(e.stderr || '').split('\n').slice(0, 3).join(' ').trim());
+          } finally {
+            fs.unlinkSync(tmp);
+          }
+        }
+      });
+      if (broken.length) {
+        broken.forEach((b) => console.log('FAIL  inline script: ' + b));
+        throw new Error(broken.length + ' inline script(s) do not parse');
+      }
       console.log('PASS  ' + files.length + ' JavaScript files parse');
+      console.log('PASS  ' + inline + ' inline scripts parse');
     } else {
       process.stdout.write(execFileSync(process.execPath, [path.resolve(__dirname, '..', file)], { encoding: 'utf8' }));
     }
