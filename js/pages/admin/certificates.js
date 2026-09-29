@@ -38,6 +38,8 @@
         ${stat('Eligible students', regs.length + finalists.length, 'Registered plus finalists')}
       </div>
 
+      ${A.ui.alertBox('info', 'How certificates are attached. ', 'Upload a file to store it with the certificate, or paste a Google Drive link for a larger file. There is no Cloud Storage on this project: it requires a paid plan, so files are kept in Firestore (up to 700 KB) or as a link. Students download from their own portal, and no email is sent.')}
+
       <div class="callout" style="margin-top:1.5rem">
         <strong>How release works.</strong> A drafted certificate exists only in the admin panel.
         Releasing it puts it in the student's portal immediately and queues the notification email
@@ -118,8 +120,10 @@
     drawList();
   }
 
-  /* The organiser supplies the file. It is uploaded here and linked to the
-     certificate; the student downloads it from their portal. */
+  function asset(c) { return A.repo.certificateAsset(c); }
+
+  /* The organiser supplies the file. It goes into Firestore as a data URI
+     rather than Cloud Storage, because Cloud Storage needs the Blaze plan. */
   function uploadFile(c, button) {
     if (!c) return;
     const input = document.createElement('input');
@@ -128,24 +132,29 @@
     input.addEventListener('change', function () {
       const file = input.files && input.files[0];
       if (!file) return;
-      if (file.size > 10 * 1024 * 1024) {
-        A.ui.toast('That file is larger than 10 MB. Please upload a smaller file.', 'error');
-        return;
-      }
-      A.ui.setBusy(button, true);
-      A.repo.uploadCertificateFile(c.code || c.id, file)
-        .then(function (url) {
-          return A.db.collection('abc_certificates').doc(c.id)
-            .update({ pdfUrl: url, fileName: file.name, updatedAt: ABC.server })
-            .then(function () {
-              A.ui.toast('Certificate file uploaded.', 'ok');
-              return load();
-            });
-        })
+      button.disabled = true;
+      A.repo.uploadCertificateFile(c.id, file)
+        .then(function () { A.ui.toast('Certificate file attached.', 'ok'); return load(); })
         .catch(function (e) { A.ui.toast(e.message || 'The upload failed.', 'error'); })
-        .then(function () { A.ui.setBusy(button, false); });
+        .then(function () { button.disabled = false; });
     });
     input.click();
+  }
+
+  /* For a file too large to store in Firestore: save it to Google Drive, set
+     the sharing to anyone with the link, and paste that link here. */
+  function linkDialog(c) {
+    A.ui.formModal('Certificate link', [
+      {
+        name: 'link', label: 'Shareable link', value: (c && c.link) || '', span: true,
+        hint: 'A Google Drive share link works well. Set the file to "anyone with the link can view". Leave empty to remove the link.'
+      }
+    ], { wide: true }).then(function (v) {
+      if (!v) return;
+      A.repo.setCertificateLink(c.id, v.link)
+        .then(function () { A.ui.toast(v.link ? 'Link saved.' : 'Link removed.', 'ok'); return load(); })
+        .catch(function (e) { A.ui.toast(e.message, 'error'); });
+    });
   }
 
   function bulkCard(type, title, sub, pool) {
@@ -180,14 +189,15 @@
       { key: 'type', label: 'Type', render: (c) => A.esc(A.repo.certLabel(c.type)) },
       { key: 'category', label: 'Category', render: (c) => A.esc(A.repo.categoryLabel(c.category)) },
       { key: 'released', label: 'Status', render: (c) => (c.released ? A.statusBadge('approved') : A.statusBadge('pending')) },
-      { key: 'fileUrl', label: 'File', render: (c) => (c.pdfUrl
-        ? '<a class="small" href="' + A.esc(c.pdfUrl) + '" target="_blank" rel="noopener">View</a>'
+      { key: 'file', label: 'File', render: (c) => (asset(c)
+        ? '<span class="small">' + A.esc(asset(c).name) + '</span>'
         : '<span class="small muted">None</span>') },
       { key: 'releasedAt', label: 'Released', render: (c) => (c.released ? A.fmtDateTime(c.releasedAt) : '—') },
       {
         label: 'Actions', render: (c) => `<div class="row-actions">
           <button class="btn btn-ghost btn-sm" data-toggle="${A.esc(c.id)}">${c.released ? 'Withdraw' : 'Release'}</button>
-          <button class="btn btn-ghost btn-sm" data-file="${A.esc(c.id)}">${c.pdfUrl ? 'Replace file' : 'Upload file'}</button>
+          <button class="btn btn-ghost btn-sm" data-file="${A.esc(c.id)}">${asset(c) ? 'Replace file' : 'Upload file'}</button>
+          <button class="btn btn-ghost btn-sm" data-link="${A.esc(c.id)}">Link</button>
           <button class="btn btn-ghost btn-sm" data-del="${A.esc(c.id)}">Delete</button>
         </div>`
       }
@@ -212,6 +222,9 @@
     }));
     document.querySelectorAll('[data-file]').forEach((b) => b.addEventListener('click', function () {
       uploadFile(rows.find((c) => c.id === this.getAttribute('data-file')), this);
+    }));
+    document.querySelectorAll('[data-link]').forEach((b) => b.addEventListener('click', function () {
+      linkDialog(rows.find((c) => c.id === this.getAttribute('data-link')));
     }));
     document.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', function () {
       const btn = this;
@@ -255,9 +268,8 @@
       { name: 'name', label: 'Name on certificate', required: true },
       { name: 'uid', label: 'Student UID', hint: 'The Firebase user ID so the certificate appears in their portal.' },
       { name: 'category', label: 'Category', type: 'select', value: 'prep', options: A.repo.CATEGORIES.map((c) => ({ value: c.id, label: c.label })) },
-      { name: 'awardLabel', label: 'Award or note' },
-      { name: 'pdfUrl', label: 'Certificate file URL', hint: 'Optional link to a PDF or image.' }
-    ]).then(function (v) {
+      { name: 'awardLabel', label: 'Award or note' }
+    ], { wide: true }).then(function (v) {
       if (!v) return;
       return A.repo.issueCertificate(v).then(function () {
         A.ui.toast('Certificate drafted.', 'ok');

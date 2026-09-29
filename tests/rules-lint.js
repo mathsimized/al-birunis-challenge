@@ -22,10 +22,12 @@ function pass(l) { checks += 1; console.log('PASS  ' + l); }
 function fail(l, d) { checks += 1; failures += 1; console.log('FAIL  ' + l + (d ? '\n        ' + d : '')); }
 
 const rules = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');
-const storage = fs.readFileSync(path.join(ROOT, 'storage.rules'), 'utf8');
+/* Cloud Storage was removed: it requires the Blaze plan. Its rules went with
+   it, and the test below asserts that it stays gone. */
+const STORAGE_GONE = !fs.existsSync(path.join(ROOT, 'storage.rules'));
 
 /* ---------- balance ---------- */
-[['firestore.rules', rules], ['storage.rules', storage]].forEach(([name, text]) => {
+[['firestore.rules', rules]].forEach(([name, text]) => {
   const stripped = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
   const open = (stripped.match(/\{/g) || []).length;
   const close = (stripped.match(/\}/g) || []).length;
@@ -121,11 +123,8 @@ if (/match \/\{document=\*\*\} \{\s*allow read, write: if false;/.test(rules)) {
 } else {
   fail('firestore: the catch-all denies by default');
 }
-if (/match \/\{allPaths=\*\*\} \{\s*allow read, write: if false;/.test(storage)) {
-  pass('storage: the catch-all denies by default');
-} else {
-  fail('storage: the catch-all denies by default');
-}
+if (STORAGE_GONE) pass('storage.rules is removed, because Cloud Storage needs Blaze');
+else fail('storage.rules is removed, because Cloud Storage needs Blaze');
 
 /* ---------- the invariants that matter, restated ---------- */
 const attempts = rules.slice(rules.indexOf('match /abc_attempts/'), rules.indexOf('match /abc_results/'));
@@ -149,12 +148,25 @@ const attempts = rules.slice(rules.indexOf('match /abc_attempts/'), rules.indexO
   else fail(label);
 });
 
+/* Nothing may reintroduce a bucket or the Storage SDK. */
 [
-  ['storage: certificates are admin-write only', /match \/certificates\/\{file\}/],
-  ['storage: organiser is admin only', /match \/organiser\/\{allPaths=\*\*\} \{\s*allow read, write: if isAdmin\(\);/]
+  ['storage: no bucket in the Firebase config', /storageBucket/],
+  ['storage: no Storage SDK is loaded', /firebase-storage-compat/],
+  ['storage: no firebase.storage() call', /firebase\.storage\(/],
+  ['storage: no Storage target in firebase.json', /"storage"\s*:/],
+  ['storage: no upload through A.storage', /A\.storage\.|ABC\.storage\s*=/]
 ].forEach(([label, re]) => {
-  if (re.test(storage)) pass(label);
-  else fail(label);
+  /* The test suite is excluded, because these patterns have to appear in
+     the assertions themselves. */
+  const haystack = [
+    rules,
+    fs.readFileSync(path.join(ROOT, 'js/firebase-config.js'), 'utf8'),
+    fs.readFileSync(path.join(ROOT, 'js/page.js'), 'utf8'),
+    fs.readFileSync(path.join(ROOT, 'firebase.json'), 'utf8')
+  ].join('\n')
+    + source.filter((t) => !/PASS |FAIL /.test(t)).join('\n');
+  if (re.test(haystack)) fail(label, 'found: ' + re);
+  else pass(label);
 });
 
 console.log('\n' + (failures ? failures + ' of ' + checks + ' checks FAILED' : 'all ' + checks + ' checks pass'));

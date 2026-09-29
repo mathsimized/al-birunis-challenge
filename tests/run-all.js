@@ -14,7 +14,8 @@ const SUITE = [
   ['check-links', 'tests/check-links.js'],
   ['rules-lint', 'tests/rules-lint.js'],
   ['export-surface', 'tests/export-surface.js'],
-  ['privacy-and-no-backend', 'tests/privacy-and-no-backend.js']
+  ['privacy-and-no-backend', 'tests/privacy-and-no-backend.js'],
+  ['ba-import-parse', 'tests/ba-import-parse.js']
 ];
 
 let failed = 0;

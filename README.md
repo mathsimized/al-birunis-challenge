@@ -5,14 +5,13 @@ administrator panel — hosted on the existing MATHSIMIZED Firebase project so
 that participants keep their existing login identity.
 
 The existing MATHSIMIZED site is **not** modified in any way. Competition data
-lives in its own `abc_*` collections, with its own rules, storage paths and
-admin panel.
+lives in its own `abc_*` collections, with its own rules and admin panel.
 
 The Firebase web configuration in `js/firebase-config.js` is committed on
 purpose. A Firebase web API key is not a secret — it ships in the HTML of every
-Firebase web app, and access is governed by `firestore.rules` and
-`storage.rules`. No service account, private key or admin token belongs in this
-repository, and `.env` is ignored.
+Firebase web app, and access is governed by `firestore.rules`, which is the
+whole security model of this project. No service account, private key or admin
+token belongs in this repository, and `.env` is ignored.
 
 ---
 
@@ -36,7 +35,7 @@ al-birunis-challenge/
 ├── css/main.css                   single stylesheet
 ├── assets/                        images and emblems
 ├── tests/                         route, link and privacy checks
-├── firestore.rules  storage.rules  firestore.indexes.json
+├── firestore.rules  firestore.indexes.json
 └── firebase.json  .firebaserc
 ```
 
@@ -80,7 +79,7 @@ Judges** so the panel and the judging sheet write the same document.
 | `abc_finalists/{uid}` | finalist confirmation, award, release flag |
 | `abc_config/grandFinale` | venue, schedule, interview plan |
 | `abc_judges/{id}` | judging panel |
-| `abc_certificates/{id}` | certificate code, type, award, uploaded file URL, release flag |
+| `abc_certificates/{id}` | certificate code, type, award, inline file or share link, release flag |
 | `abc_announcements/{id}` | notices by audience |
 | `abc_audit_log/{id}` | every privileged action |
 | `users/{uid}` | **read-only** MATHSIMIZED profile, used to prefill forms |
@@ -89,8 +88,8 @@ Judges** so the panel and the judging sheet write the same document.
 
 This site runs on the **free Spark plan**. There are no Cloud Functions, no
 server-side code and no email service. Everything a browser does is constrained
-by `firestore.rules` and `storage.rules`, and those two files are the whole
-security model. The design consequence is deliberate:
+by `firestore.rules`, and that one file is the whole security model. The design
+consequence is deliberate:
 
 **The question bank is split in two.**
 
@@ -118,11 +117,25 @@ expired. The attempt rules freeze `score`, `maxScore`, `correctCount`,
 `breakdown`, `questions` and `startedAt` against student writes, so a client
 cannot award itself marks.
 
-**Certificates are uploaded by the organiser** and read from the student's
+**Certificates are attached by the organiser** and read from the student's
 portal. No email is sent: sending one from a browser would mean shipping an
 email API key to every visitor. Students see their certificates in
 **Student → My certificates**, and each one carries a code they can quote if
 they need a replacement.
+
+There are two ways to attach a certificate, because Cloud Storage needs a paid
+plan:
+
+- **Upload a file** from the certificate list. It is stored in Firestore as a
+  data URI, capped at 700 KB so it stays under the 1 MiB document limit. A
+  generated certificate is normally far smaller than that.
+- **Paste a link** for anything larger. Save the file to Google Drive, set it to
+  *anyone with the link can view*, and paste the URL. This is how Round 2
+  presentation files already work.
+
+Both paths are administrator-only writes. The student sees a *Download* button
+for an inline file and an *Open* button for a link, on their own certificate
+only.
 
 ### What was given up, honestly
 
@@ -161,7 +174,7 @@ from the browser through the compatibility SDK loaded from a CDN.
 ### Local testing
 
 ```bash
-firebase emulators:start          # firestore, storage, hosting
+firebase emulators:start          # firestore, hosting
 ```
 
 Six checks need no tooling at all:
@@ -189,7 +202,7 @@ To run against the emulators, change `ABC_FIREBASE_CONFIG` in
 ## 6. Deploy
 
 ```bash
-firebase deploy --only firestore:rules,firestore:indexes,storage
+firebase deploy --only firestore:rules,firestore:indexes
 firebase deploy --only hosting
 ```
 
@@ -220,7 +233,12 @@ Applications are made on a Google Form, not on this site:
 <https://forms.gle/QvNTaC4cwCdNzzzR7>. The window is **20 September 2026** to
 **5 October 2026**, which is separate from competition registration on 1 October.
 
-1. **Brand Ambassadors** — add each applicant from the form's response sheet.
+1. **Brand Ambassadors** — add applicants from the form's response sheet. One
+   at a time with **Add applicant**, or select the rows in the sheet, copy, and
+   use **Paste from sheet**. The header line is read to find the name, email,
+   contact, category, school and city columns, so the timestamp and "never
+   submit again" columns are ignored, and both tab-separated and CSV pastes
+   work. Everything is shown for confirmation before anything is written.
    Approving mints a code like `BA-XXXXXX`, which you send to the ambassador.
 2. A student types that code on the competition registration form. The code is
    stored as text; nothing is looked up at that moment, so a student cannot
@@ -251,8 +269,15 @@ wording for that.
 - The shared MATHSIMIZED `users` collection is read-only here; roles live in
   `abc_users`.
 - Every privileged action writes to `abc_audit_log`.
-- Storage is partitioned per uid. `certificates/` is read-only to the public and
-  writable only by an administrator; `organiser/` is administrator-only.
+- Certificates are administrator-only to write and readable only by the student
+  they belong to.
+- **There is no Cloud Storage.** Cloud Storage for Firebase has required the
+  Blaze plan since 3 February 2026, so on the free plan a bucket answers every
+  call with a 402. A certificate file is therefore stored in Firestore as a data
+  URI (capped at 700 KB, under the 1 MiB document limit), and anything larger is
+  a Google Drive link the organiser pastes in — the same approach Round 2 uses
+  for presentation files. `tests/privacy-and-no-backend.js` fails the build if a
+  bucket, the Storage SDK or a `storageBucket` key comes back.
 - `tests/privacy-and-no-backend.js` fails the build if any of the above is
   quietly undone.
 

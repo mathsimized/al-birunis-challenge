@@ -52,12 +52,20 @@ const BANNED = [
   ['resendCertificateEmail', /resendCertificateEmail/],
   ['Resend', /\bResend\b/],
   ['api.resend.com', /api\.resend\.com/],
-  ['the old BA self-service apply', /\.applyBA\(|applyBA\s*\(/]
+  ['the old BA self-service apply', /\.applyBA\(|applyBA\s*\(/],
+  /* Cloud Storage for Firebase has required the Blaze plan since
+     3 February 2026, so nothing here may depend on a bucket again. */
+  ['the Storage SDK', /firebase-storage-compat/],
+  ['a storage bucket', /storageBucket|firebasestorage\.app/],
+  ['firebase.storage()', /firebase\.storage\(/],
+  ['upload via a bucket', /A\.storage\.|ABC\.storage\s*=|\.ref\(['"]certificates/]
 ];
 
 BANNED.forEach(([label, re]) => {
   // tests/ may mention the banned names in order to assert their absence
-  const hits = source.filter((s) => re.test(s.text) && !s.file.startsWith('tests' + path.sep));
+  const hits = source.filter((s) => re.test(s.text)
+    && !s.file.startsWith('tests' + path.sep)
+    && /\.(js|html|json)$/.test(s.file));
   if (hits.length) {
     fail('no backend: ' + label, hits.map((h) => h.file).join(', '));
   } else {
@@ -201,6 +209,99 @@ if (/QvNTaC4cwCdNzzzR7/.test(read('brand-ambassadors.html'))) {
   pass('public page: links to the Brand Ambassador Google Form');
 } else {
   fail('public page: links to the Brand Ambassador Google Form');
+}
+
+/* ---------------- 3. certificates stay inside the free plan ----------------
+   The file now lives in Firestore or behind a link the organiser supplies, so
+   nothing is uploaded to a bucket, and a student still only ever sees their
+   own certificate. */
+[
+  ['certificates: a student reads only their own document', /match \/abc_certificates\/\{certificateId\} \{\s*allow read: if isSelf\(resource\.data\.uid\) \|\| isAdmin\(\);/],
+  ['certificates: only an admin writes', /match \/abc_certificates\/\{certificateId\} \{[\s\S]{0,160}?allow write: if isAdmin\(\);/]
+].forEach(([label, re]) => {
+  const rules = read('firestore.rules');
+  if (re.test(rules)) pass('rules: ' + label);
+  else fail('rules: ' + label);
+});
+
+/* This one is the other way round: a bucket path must not appear. */
+if (!/storage/i.test(read('firestore.rules'))) {
+  pass('rules: certificates: no bucket path in the rules');
+} else {
+  fail('rules: certificates: no bucket path in the rules');
+}
+
+/* The inline file is size-capped, because a Firestore document is 1 MiB. */
+[
+  ['certificates: the inline upload is capped below 1 MiB', /MAX_CERTIFICATE_BYTES = 700 \* 1024/],
+  ['certificates: the cap is explained to the organiser', /700 KB/]
+].forEach(([label, re]) => {
+  const code = read('js/repo.js') + read('js/pages/admin/certificates.js');
+  if (re.test(code)) pass(label);
+  else fail(label);
+});
+
+/* Releasing must never imply an email, and the portal must offer the asset. */
+[
+  ['certificates: no email is sent on release', /certificate_email|sendCertificateEmail/]
+].forEach(([label, re]) => {
+  const hits = source.filter((s) => re.test(s.text)
+    && !s.file.startsWith('tests' + path.sep)
+    && /\.(js|html|json)$/.test(s.file));
+  if (hits.length) fail(label, hits.map((h) => h.file).join(', '));
+  else pass(label);
+});
+
+/* The public Brand Ambassador snapshot is a Firestore document anyone can
+   read, so anything written into it is public whether or not a page renders
+   it. It may carry a rank; it may not carry a count. */
+[
+  ['no totalApproved', /totalApproved/],
+  ['no attributedCount', /attributedCount/],
+  ['no per-row counts', /count:/],
+  ['no approved total', /approved[A-Za-z]*Count/]
+].forEach(([label, re]) => {
+  const fn = read('js/repo.js');
+  const start = fn.indexOf("C.publicBa).doc('topFive').set(");
+  /* Comments are stripped: naming the forbidden field in a comment that
+     says it is absent is exactly what should be allowed. */
+  const payload = fn.slice(start, fn.indexOf('});', start)).replace(/\/\*[\s\S]*?\*\//g, '');
+  if (re.test(payload)) fail('public BA snapshot: ' + label, payload);
+  else pass('public BA snapshot: ' + label);
+});
+
+/* The best-ambassador copy may state a count, because it is spoken at the
+   ceremony and lives only in the admin panel. */
+if (/bestCopy/.test(read('js/pages/admin/announcements.js'))) {
+  pass('announcements: the ceremony copy for Best Brand Ambassador exists');
+} else {
+  fail('announcements: the ceremony copy for Best Brand Ambassador exists');
+}
+
+/* The panel used to tell the organiser to "use Paste from sheet" without
+   offering it. Assert the button and the parser exist together. */
+[
+  ['the paste button exists', /id="importBtn"/],
+  ['it opens a dialog', /function importDialog/],
+  ['it parses before it writes', /function parseImportedRows/],
+  ['nothing is written without confirmation', /confirmModal/],
+  ['it goes through createBA, so codes are issued the same way', /A\.repo\.createBA\(r\)/]
+].forEach(([label, re]) => {
+  const page = read('js/pages/admin/brand-ambassadors.js');
+  if (re.test(page)) pass('BA import: ' + label);
+  else fail('BA import: ' + label);
+});
+
+if (/bestBtn/.test(read('js/pages/admin/announcements.js'))) {
+  pass('announcements: the ceremony copy is one click away in the admin panel');
+} else {
+  fail('announcements: the ceremony copy is one click away in the admin panel');
+}
+
+if (/certificateAsset/.test(read('js/pages/student/certificates.js'))) {
+  pass('certificates: the student portal opens whatever asset was attached');
+} else {
+  fail('certificates: the student portal opens whatever asset was attached');
 }
 
 if (/instagram\.com\/al_birunis_challenge/.test(read('js/ui.js'))) {

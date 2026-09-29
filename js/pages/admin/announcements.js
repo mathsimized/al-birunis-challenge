@@ -37,6 +37,7 @@
         <button class="btn btn-outline" id="quickR2Btn">Quick notice: Round 2 open</button>
         <button class="btn btn-outline" id="quickFinBtn">Quick notice: finalists confirmed</button>
         <button class="btn btn-outline" id="quickBaBtn">Quick notice: BA top five</button>
+        <button class="btn btn-outline" id="bestBtn">Ceremony: Best BA announcement</button>
       </div>
 
       <div class="panel">
@@ -65,6 +66,26 @@
         btn.disabled = false;
       }
     });
+    /* The Best Brand Ambassador is named at the Grand Finale, and only there.
+       This is the one notice that states the count behind the win, so it is
+       built from the admin panel and never published to the website. */
+    host.querySelector('#bestBtn').addEventListener('click', async function () {
+      const btn = this;
+      btn.disabled = true;
+      try {
+        const baRows = await A.repo.listBAs();
+        const ranked = A.repo.baLeaderboard(baRows, 5);
+        if (!ranked.length) { A.ui.toast('No approved ambassadors yet.', 'error'); return; }
+        openEditor(Object.assign({
+          audience: 'everyone', published: true, pinned: true
+        }, bestCopy(ranked[0])));
+      } catch (e) {
+        A.ui.toast(e.message || 'Could not load the ranking.', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
     const quick = (btn, title, body) => {
       host.querySelector(btn).addEventListener('click', function () {
         A.repo.saveAnnouncement({ title, body, audience: 'everyone', published: true })
@@ -135,6 +156,9 @@
     };
   }
 
+  /* For the ceremony. Unlike the top-five notice this one states the count
+     behind the win, which is why it is written here and not published to the
+     website. */
   function bestCopy(best) {
     return {
       title: 'Best Brand Ambassador 2026',

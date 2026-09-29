@@ -1,7 +1,9 @@
 /* Brand Ambassadors admin.
  *
  * Applications arrive on a Google Form, so this panel adds them, issues the
- * codes, credits registrations, and publishes the public top five.
+ * codes, credits registrations, and publishes the public top five. Applicants
+ * can be typed in one at a time, or pasted in as a block of rows straight from
+ * the form's response sheet.
  *
  * Everything here is administrator-only. The attributed counts never leave this
  * screen: the public page reads a separate snapshot that holds names and ranks
@@ -64,6 +66,7 @@
             <h2>Ambassadors</h2>
             <div class="flex-center">
               <button class="btn btn-primary btn-sm" id="addBtn">Add applicant</button>
+              <button class="btn btn-outline btn-sm" id="importBtn">Paste from sheet</button>
               <button class="btn btn-outline btn-sm" id="exportBtn">Export</button>
             </div>
           </div>
@@ -71,8 +74,9 @@
             <div class="callout" style="margin:0 0 1rem">
               Applicants apply on the
               <a href="${A.esc(FORM_URL)}" target="_blank" rel="noopener">Brand Ambassador Google Form</a>.
-              Add each applicant here with <em>Add applicant</em>, or open the form's
-              response sheet and use <em>Paste from sheet</em>.
+              Add one at a time with <em>Add applicant</em>, or select the rows in the
+              response sheet, copy them, and use <em>Paste from sheet</em> to create them all
+              at once. Imported applicants start as approved, with their code issued here.
             </div>
             <div class="tabs-pills" style="margin-bottom:1rem">
               <button class="pill ${state.status === 'approved' ? 'active' : ''}" data-status="approved">Approved (${approved.length})</button>
@@ -126,6 +130,7 @@
     }));
 
     host.querySelector('#addBtn').addEventListener('click', function () { addDialog(); });
+    host.querySelector('#importBtn').addEventListener('click', function () { importDialog(); });
     host.querySelector('#exportBtn').addEventListener('click', function () {
       A.exportCSV('al-birunis-brand-ambassadors.csv', [
         { key: 'code', label: 'Code' },
@@ -255,6 +260,173 @@
   }
 
   /* Add or edit one applicant. The fields mirror the Google Form. */
+  /* ---------- paste from the response sheet ----------
+
+   * The organiser copies rows out of the Google Form's linked sheet. That
+   * gives tab-separated text with a header line, but it may also be pasted as
+   * CSV, and a response sheet is full of columns nobody wants (timestamps,
+   * email addresses in the wrong place, a trailing "never submit again" line).
+   * So: read the header, find the columns by name, and ignore the rest. */
+
+  const IMPORT_COLUMNS = [
+    { key: 'name', label: 'Full name', required: true, aliases: ['name', 'full name', 'applicant', 'applicant name', 'your name'] },
+    { key: 'email', label: 'Email', aliases: ['email', 'email address', 'e-mail', 'your email'] },
+    { key: 'contact', label: 'Contact', aliases: ['contact', 'contact number', 'phone', 'phone number', 'whatsapp', 'whatsapp number', 'mobile'] },
+    { key: 'category', label: 'Category', aliases: ['category', 'which category', 'category to promote', 'track'] },
+    { key: 'school', label: 'School', aliases: ['school', 'institution', 'school / institution', 'organisation', 'organization'] },
+    { key: 'city', label: 'City', aliases: ['city', 'location'] }
+  ];
+
+  function splitRow(line, delimiter) {
+    const out = [];
+    let cell = '', quoted = false;
+    for (let i = 0; i < line.length; i += 1) {
+      const ch = line[i];
+      if (quoted) {
+        if (ch !== '"') { cell += ch; continue; }
+        if (line[i + 1] === '"') { cell += '"'; i += 1; continue; }
+        quoted = false;
+        continue;
+      }
+      if (ch === '"') { quoted = true; continue; }
+      if (ch === delimiter) { out.push(cell); cell = ''; continue; }
+      cell += ch;
+    }
+    out.push(cell);
+    return out.map((c) => c.trim());
+  }
+
+  /* Tabs win when present, because that is what a Google Sheet copy produces;
+     otherwise fall back to commas. */
+  function detectDelimiter(text) {
+    const line = text.split(/\r?\n/).find((l) => l.trim()) || '';
+    return line.indexOf('\t') !== -1 ? '\t' : ',';
+  }
+
+  function normaliseHeader(cell) {
+    return String(cell).toLowerCase()
+      .replace(/[\*\u2022]/g, '')
+      .replace(/\s*\(.*?\)\s*/g, ' ')
+      .replace(/[_.\-/:]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /* Aliases are put through the same normalisation as the header, so a
+     column called "School / Institution" and one called "School" both match
+     the school alias. */
+  function matchColumn(header, aliases) {
+    const wanted = aliases.map(normaliseHeader);
+    for (let i = 0; i < header.length; i += 1) {
+      if (wanted.indexOf(header[i]) !== -1) return i;
+    }
+    return undefined;
+  }
+
+  function parseImportedRows(text) {
+    const delimiter = detectDelimiter(text);
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (!lines.length) return { rows: [], problems: ['Nothing was pasted.'] };
+
+    const header = splitRow(lines[0], delimiter).map(normaliseHeader);
+    const columnFor = {};
+    IMPORT_COLUMNS.forEach((col) => {
+      const i = matchColumn(header, col.aliases);
+      if (i !== undefined) columnFor[col.key] = i;
+    });
+    if (columnFor.name === undefined) {
+      return {
+        rows: [],
+        problems: ['No name column was found. The first line has to be the sheet\'s header row. '
+          + 'Columns looked for: ' + IMPORT_COLUMNS.map((c) => c.label).join(', ') + '.']
+      };
+    }
+
+    const rows = [];
+    const problems = [];
+    lines.slice(1).forEach((line, index) => {
+      const cells = splitRow(line, delimiter);
+      if (cells.every((c) => !c)) return;
+      const value = (key) => {
+        const i = columnFor[key];
+        return i === undefined ? '' : (cells[i] || '').trim();
+      };
+      const name = value('name');
+      if (!name) { problems.push('Row ' + (index + 2) + ' has no name, so it was skipped.'); return; }
+      if (/never submit|form response/i.test(name)) { problems.push('Row ' + (index + 2) + ' looked like a form footer and was skipped.'); return; }
+      const categoryRaw = value('category').toLowerCase();
+      const category = (A.repo.CATEGORIES.find((c) =>
+        c.id === categoryRaw || c.label.toLowerCase() === categoryRaw
+        || c.label.toLowerCase().indexOf(categoryRaw) === 0) || {}).id || '';
+      rows.push({
+        name: name,
+        email: value('email'),
+        contact: value('contact'),
+        category: category,
+        school: value('school'),
+        city: value('city'),
+        source: 'google-form-import',
+        status: 'approved'
+      });
+      if (categoryRaw && !category) {
+        problems.push('"' + value('category') + '" is not one of the three categories, '
+          + 'so "' + name + '" was left without one.');
+      }
+    });
+    return { rows: rows, problems: problems };
+  }
+
+  async function importDialog() {
+    const data = await A.ui.formModal('Paste from the response sheet', [
+      {
+        name: 'pasted', label: 'Copied rows', type: 'textarea', span: true, required: true,
+        hint: 'In the response sheet, click the first cell, then shift-click the last row, copy, and paste here. '
+          + 'The header line is used to find the name, email, contact, category, school and city columns; '
+          + 'everything else in the sheet is ignored.'
+      }
+    ], { wide: true, submitLabel: 'Review the rows' });
+
+    if (!data || !String(data.pasted || '').trim()) return;
+
+    const parsed = parseImportedRows(String(data.pasted));
+    if (!parsed.rows.length) {
+      A.ui.toast(parsed.problems[0] || 'No applicants were found in that text.', 'error');
+      return;
+    }
+
+    const unknown = parsed.rows.filter((r) => !r.category);
+    /* confirmModal takes plain text, so the summary is written out rather
+       than assembled as markup. */
+    const notes = [parsed.rows.length + ' applicant' + (parsed.rows.length === 1 ? '' : 's')
+      + ' found. Each will be created as approved, with a code issued for them.'];
+    if (unknown.length) {
+      notes.push(unknown.length + ' without a matching category (still imported, set afterwards): '
+        + unknown.map((r) => r.name).join(', '));
+    }
+    parsed.problems.slice(0, 6).forEach((n) => notes.push(n));
+    if (parsed.problems.length > 6) notes.push('…and ' + (parsed.problems.length - 6) + ' more.');
+
+    const ok = await A.ui.confirmModal(
+      'Import ' + parsed.rows.length + ' applicants?', notes.join('\n\n'), 'Import');
+    if (!ok) return;
+
+    const done = [];
+    const failed = [];
+    for (const r of parsed.rows) {
+      try {
+        done.push(await A.repo.createBA(r));
+      } catch (e) {
+        failed.push(r.name + ' — ' + (e.message || 'failed'));
+      }
+    }
+    A.ui.toast(
+      done.length + ' imported' + (failed.length ? ', ' + failed.length + ' failed' : '') + '.',
+      failed.length ? 'warn' : 'ok'
+    );
+    if (failed.length) console.warn('Brand Ambassador import failures:', failed);
+    load();
+  }
+
   async function addDialog(existing) {
     const b = existing || {};
     const data = await A.ui.formModal(existing ? 'Edit ambassador' : 'Add ambassador', [

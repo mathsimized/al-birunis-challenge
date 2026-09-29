@@ -7,11 +7,14 @@
 
   const A = global.ABC;
 
+  /* Only what this project actually uses. Cloud Storage is deliberately
+     absent: it requires the Blaze plan, and this project stays on Spark.
+     A browser that loaded it would only be able to make calls that return
+     402. */
   const SDK = [
     'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
     'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js',
-    'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js',
-    'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js'
+    'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js'
   ];
 
   const MODULES = [

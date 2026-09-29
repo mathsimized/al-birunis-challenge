@@ -451,8 +451,9 @@
     await db().collection(C.publicBa).doc('topFive').set({
       published: true,
       rows: top,
-      totalApproved: rows.filter((r) => r.status === 'approved').length,
-      /* Deliberately absent: attributedCount, email, contact, code. */
+      /* Deliberately absent: attributedCount, email, contact, code — and any
+         count at all, including how many ambassadors were approved. The
+         requirement is the top five and nothing else. */
       note: 'Best Brand Ambassador is announced at the Grand Finale award ceremony.',
       publishedAt: A.server
     });
@@ -544,12 +545,21 @@
   async function issueCertificate(data) {
     const ref = db().collection(C.certificates).doc();
     const code = 'ABC-' + new Date().getFullYear() + '-' + A.uid('').slice(0, 6).toUpperCase();
-    await ref.set(Object.assign({
+    /* The file is attached separately, through uploadCertificateFile or
+       setCertificateLink, so issuing a batch of certificates does not mean
+       choosing a file for each one first. */
+    await ref.set({
       code,
+      name: data.name || '',
+      uid: data.uid || '',
+      type: data.type || 'participation',
+      category: data.category || '',
+      awardLabel: data.awardLabel || '',
       released: false,
       createdAt: A.server,
       updatedAt: A.server
-    }, data));
+    });
+    await audit('certificate_issue', { code, type: data.type });
     return ref.id;
   }
 
@@ -567,13 +577,73 @@
       .then(function () { return audit('certificate_withdraw', { id: id }); });
   }
 
-  /* Uploads the certificate file and returns its public URL. Files live under
-     certificates/, which is readable by the student holder and writable only
-     by an administrator. */
-  async function uploadCertificateFile(code, file) {
-    const ref = A.storage.ref('certificates/' + String(code || 'certificate').replace(/[^A-Za-z0-9._-]/g, '') + '-' + file.name);
-    const snap = await ref.put(file, { contentType: file.type || 'application/octet-stream' });
-    return snap.ref.getDownloadURL();
+  /* Certificate files, without Cloud Storage.
+   *
+   * Cloud Storage for Firebase has needed the Blaze plan since 3 February
+   * 2026, so a bucket is not available on the free plan this project runs on.
+   * Two ways in instead:
+   *
+   *   uploadCertificateFile  stores a small PDF in Firestore as a data URI. A
+   *                         generated certificate is normally tens of
+   *                         kilobytes, so this works for the normal case. The
+   *                         limit is a Firestore document, so 700 KB of file
+   *                         is the ceiling.
+   *   certificateLink       a shareable link for anything larger, the same
+   *                         approach Round 2 already uses for presentation
+   *                         files.
+   *
+   * Both are administrator-only writes, and both are only readable by the
+   * student the certificate belongs to. */
+  const MAX_CERTIFICATE_BYTES = 700 * 1024;
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('That file could not be read.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadCertificateFile(id, file) {
+    if (!file) throw new Error('No file was chosen.');
+    if (file.size > MAX_CERTIFICATE_BYTES) {
+      throw new Error(
+        'That file is ' + Math.round(file.size / 1024) + ' KB. The limit is 700 KB, because the '
+        + 'file is stored in Firestore rather than in Cloud Storage. For a larger file, save it to '
+        + 'Google Drive, share it, and paste the link instead.');
+    }
+    const dataUrl = await readFileAsDataUrl(file);
+    await db().collection(C.certificates).doc(id).set({
+      pdfData: dataUrl,
+      fileName: file.name,
+      fileSize: file.size,
+      link: null,
+      updatedAt: A.server
+    }, { merge: true });
+    await audit('certificate_file', { id, fileName: file.name, size: file.size });
+    return true;
+  }
+
+  async function setCertificateLink(id, link) {
+    const url = String(link || '').trim();
+    if (url && !/^https:\/\//i.test(url)) {
+      throw new Error('A certificate link has to start with https://');
+    }
+    await db().collection(C.certificates).doc(id).set({
+      link: url || null,
+      pdfData: null,
+      updatedAt: A.server
+    }, { merge: true });
+    await audit('certificate_link', { id, hasLink: !!url });
+    return true;
+  }
+
+  /* What the student card should offer: an inline file, a link, or nothing. */
+  function certificateAsset(c) {
+    if (c && c.pdfData) return { kind: 'file', href: c.pdfData, name: c.fileName || 'certificate' };
+    if (c && c.link) return { kind: 'link', href: c.link, name: c.fileName || 'Open certificate' };
+    return null;
   }
 
   async function deleteCertificate(id) { await db().collection(C.certificates).doc(id).delete(); }
@@ -605,7 +675,8 @@
     attributeRegistrations, publishPublicBATopFive, unpublishPublicBATopFive, onPublicBATopFive,
     listJudges, upsertJudge, deleteJudge,
     listCertificates, getCertificatesForUser, onCertificatesForUser, issueCertificate,
-    releaseCertificate, withdrawCertificate, uploadCertificateFile, deleteCertificate,
+    releaseCertificate, withdrawCertificate, uploadCertificateFile, setCertificateLink,
+    certificateAsset, MAX_CERTIFICATE_BYTES, deleteCertificate,
     audit
   };
 })(window);

@@ -749,10 +749,11 @@
 
   async function importQuestions(rows) {
     const written = [];
-    /* Batched, so a 300-row import is a handful of requests rather than
-       hundreds of round trips. */
-    for (let i = 0; i < rows.length; i += 400) {
-      const slice = rows.slice(i, i + 400);
+    /* Two writes per question, and a Firestore batch accepts 500 operations,
+       so the chunk is 200 questions. 400 would be 800 writes and would fail
+       outright on any real import. */
+    for (let i = 0; i < rows.length; i += 200) {
+      const slice = rows.slice(i, i + 200);
       const batch = db().batch();
       for (const item of slice) {
         const data = normaliseQuestion(item);

@@ -207,15 +207,13 @@
       { name: 'uid', label: 'Student UID', value: subject.uid, required: true },
       { name: 'name', label: 'Name on certificate', value: subject.name || subject.studentName || '', required: true },
       { name: 'category', label: 'Category', type: 'select', value: subject.category, options: A.repo.CATEGORIES.map((c) => ({ value: c.id, label: c.label })) },
-      { name: 'awardLabel', label: 'Award or note', value: (A.round2.AWARDS[subject.award] || {}).label || '' },
-      { name: 'pdfUrl', label: 'Certificate file URL', hint: 'Optional link to a PDF or image the student can open or download.' }
-    ]).then(async function (v) {
+      { name: 'awardLabel', label: 'Award or note', value: (A.round2.AWARDS[subject.award] || {}).label || '' }
+    ], { wide: true }).then(async function (v) {
       if (!v) return;
       await A.repo.issueCertificate({
-        uid: v.uid, name: v.name, type: type, category: v.category,
-        awardLabel: v.awardLabel, pdfUrl: v.pdfUrl
+        uid: v.uid, name: v.name, type: type, category: v.category, awardLabel: v.awardLabel
       });
-      A.ui.toast('Certificate drafted. Release it from the Certificates page to email the student.', 'ok');
+      A.ui.toast('Certificate drafted. Attach the file, then release it, on the Certificates page.', 'ok');
     });
   }
   A.adminIssueCert = issueCert;

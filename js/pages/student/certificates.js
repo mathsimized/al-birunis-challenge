@@ -50,6 +50,11 @@
   function certCard(c) {
     const label = A.repo.certLabel(c.type);
     const when = c.releasedAt || c.createdAt;
+    const asset = A.repo.certificateAsset(c);
+    const download = !asset ? ''
+      : asset.kind === 'file'
+        ? `<dt>Download</dt><dd><a class="btn btn-outline btn-sm" download="${A.esc(asset.name)}" href="${A.esc(asset.href)}">Download certificate</a></dd>`
+        : `<dt>Open</dt><dd><a class="btn btn-outline btn-sm" href="${A.esc(asset.href)}" target="_blank" rel="noopener">Open certificate</a></dd>`;
     return `<div class="card" data-cert="${A.esc(c.id)}">
       <div class="cert-card">
         <div class="cert-rule" aria-hidden="true"></div>
@@ -66,7 +71,7 @@
         <dl class="kv" style="margin-top:1rem">
           <dt>Certificate code</dt><dd class="mono">${A.esc(c.code || '—')}</dd>
           <dt>Issued</dt><dd>${A.fmtDate(when)}</dd>
-          ${c.pdfUrl ? `<dt>Download</dt><dd><a class="btn btn-outline btn-sm" href="${A.esc(c.pdfUrl)}" target="_blank" rel="noopener">Open certificate</a></dd>` : ''}
+          ${download}
         </dl>
       </div>
     </div>`;
