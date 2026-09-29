@@ -36,6 +36,23 @@ function walk(dir, out) {
 
 const files = walk(ROOT);
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+
+/* Every page and script a visitor can load, as one blob. */
+const appCopy = ['js', '.'].flatMap((d) => {
+  const out = [];
+  const walk = (dir, depth) => {
+    if (depth > 3) return;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.name.startsWith('.') || e.name === 'tests' || e.name === 'node_modules') continue;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full, depth + 1);
+      else if (/\.(js|html)$/.test(e.name)) out.push(full);
+    }
+  };
+  walk(d, 0);
+  return out;
+}).map((f) => read(f)).join('\n');
+
 const source = files
   .filter((f) => /\.(js|html|json|md)$/.test(f))
   .map((f) => ({ file: path.relative(ROOT, f), text: fs.readFileSync(f, 'utf8') }));
@@ -328,13 +345,26 @@ if (/bestBtn/.test(read('js/pages/admin/announcements.js'))) {
 
 /* Usernames are checked against the shared collection, so they cannot collide
    with an account created on the main site. */
+/* The username check reads one small public document per name. It must not
+   read the user collection: that would mean publishing every student's email
+   address just to answer "is this name taken". */
 [
-  ['the availability check queries the shared users collection', /C\.profileLookup\)\s*\.where\('username'/],
-  ['a failed check never reports the name as free', /catch \(e\) \{\s*return \{ available: false/]
+  ['the check reads a single document, not the user collection', /C\.usernames\)\.doc\(value\)\.get\(\)/],
+  ['the name is normalised before it is used as a path', /function normaliseUsername/],
+  ['a failed check never reports the name as free', /catch \(e\) \{\s*return \{ available: false/],
+  ['signing up reserves the name, not just checks it', /await A\.repo\.reserveUsername\(cred\.user\.uid, value\)/],
+  ['a half-made account is rolled back', /await cred\.user\.delete\(\)/]
 ].forEach(([label, re]) => {
-  if (re.test(read('js/repo.js'))) pass('username check: ' + label);
+  const src = read('js/repo.js') + read('js/session.js');
+  if (re.test(src)) pass('username check: ' + label);
   else fail('username check: ' + label);
 });
+
+if (!/C\.users\)\s*\.where|\.collection\(C\.users\)[\s\S]{0,40}?\.where/.test(read('js/repo.js'))) {
+  pass('username check: the user collection is never queried to test a name');
+} else {
+  fail('username check: the user collection is never queried to test a name');
+}
 
 /* Registration runs through the whole of 1 Nov 2026 and is shut from 00:00 on
    the 2nd. The timestamp encodes that; the copy has to match, because a
@@ -425,25 +455,58 @@ if (/\{ href: 'student\/dashboard\.html', label: 'My Student Portal'/.test(read(
    as the team instead: "we" for actions, "the Al-Biruni's organising team" for
    a name, and "the judges" only where judging is genuinely meant. */
 {
-  const app = ['js', '.'].flatMap((d) => {
-    const out = [];
-    const walk = (dir, depth) => {
-      if (depth > 3) return;
-      for (const e of require('fs').readdirSync(dir, { withFileTypes: true })) {
-        if (e.name.startsWith('.') || e.name === 'tests' || e.name === 'node_modules') continue;
-        const full = require('path').join(dir, e.name);
-        if (e.isDirectory()) walk(full, depth + 1);
-        else if (/\.(js|html)$/.test(e.name)) out.push(full);
-      }
-    };
-    walk(d, 0);
-    return out;
-  }).map((f) => read(f)).join('\n');
-
-  const offenders = (app.match(/[^\w'](?:the )?[Oo]rganiser/g) || []).length;
+  const offenders = (appCopy.match(/[^\w'](?:the )?[Oo]rganiser/g) || []).length;
   if (offenders) fail('voice: no "organiser" in anything a visitor reads (' + offenders + ' left)');
   else pass('voice: no "organiser" in anything a visitor reads');
 }
+
+/* This is the competition's own project. Nothing may point back at the
+   MATHSIMIZED project, and nothing may claim the accounts are shared. */
+[
+  ['the app talks to its own project', /projectId: "al-birunis-challenge"/],
+  ['it uses its own auth domain', /authDomain: "al-birunis-challenge\.firebaseapp\.com"/]
+].forEach(([label, re]) => {
+  if (re.test(read('js/firebase-config.js'))) pass('project split: ' + label);
+  else fail('project split: ' + label);
+});
+
+[['the old project id', 'mathsimized-e4ff0'], ['the old auth domain', 'authDomain: "mathsimized.com"']]
+  .forEach(([label, needle]) => {
+    if (needle.indexOf('"') > -1 ? read('js/firebase-config.js').includes(needle) : false) {
+      fail('project split: ' + label + ' is gone');
+    } else {
+      pass('project split: ' + label + ' is gone');
+    }
+  });
+
+/* Claiming a shared login would send students to the wrong site. The pages
+   may still say Mathsimized organises this, which is true. */
+[
+  ['no page offers a shared Mathsimized login', /existing Mathsimized account|shared with Mathsimized|same account you use|shares your login|use your Mathsimized/],
+  ['no page tells a student their account is the one they use elsewhere', /Mathsimized account yet|your existing login/]
+].forEach(([label, re]) => {
+  if (re.test(appCopy)) fail('project split: ' + label);
+  else pass('project split: ' + label);
+});
+
+[
+  ['the signup page describes its own account', /Pick a username and you are in/],
+  ['the privacy page describes this site holding the data', /held on this competition&rsquo;s own account system/],
+  ['the about page says it runs on its own accounts', /own website, its own accounts and its own administration/]
+].forEach(([label, re]) => {
+  if (re.test(appCopy)) pass('project split: ' + label);
+  else fail('project split: ' + label);
+});
+
+/* A finished Round 1 attempt is scored without anyone pressing a button, the
+   way the games save a score the moment a game ends. */
+[
+  ['the panel scores pending attempts as it loads', /scoreAllPending\(\)[\s\S]{0,300}?listAttempts/],
+  ['a scoring failure still renders the page', /failure here must not stop the page rendering/]
+].forEach(([label, re]) => {
+  if (re.test(read('js/pages/admin/round1.js'))) pass('auto-scoring: ' + label);
+  else fail('auto-scoring: ' + label);
+});
 
 if (/certificateAsset/.test(read('js/pages/student/certificates.js'))) {
   pass('certificates: the student portal opens whatever asset was attached');

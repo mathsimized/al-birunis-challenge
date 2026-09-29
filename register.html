@@ -31,7 +31,7 @@
     <div class="auth-card">
       <div class="text-center" style="margin-bottom:1.5rem">
         <h1 style="font-size:2rem;margin-bottom:.35rem">Create your account</h1>
-        <p class="muted small" style="margin:0">The same account you use on Mathsimized. You will enter your competition details in the next step.</p>
+        <p class="muted small" style="margin:0">Pick a username and you are in. It is how you sign in, and how you appear on results.</p>
       </div>
 
       <div data-error></div>
@@ -111,6 +111,8 @@
       case 'auth/weak-password': return 'Choose a stronger password — at least 6 characters.';
       case 'auth/too-many-requests': return 'Too many attempts. Please wait a few minutes and try again.';
       case 'auth/network-request-failed': return 'Network problem. Check your connection and try again.';
+      case 'username-taken': return 'That username was taken while you were typing. Try another one.';
+      case 'signup-incomplete': return 'We could not finish setting up your account, so nothing was saved. Please try again.';
       default: return 'Something went wrong. Please try again.';
     }
   }
@@ -182,7 +184,10 @@
         A.redirect('student/registration.html?required=1&welcome=1');
       })
       .catch(function (err) {
-        errBox.innerHTML = A.ui.alertBox('danger', '', friendly(err && err.code) !== 'Something went wrong. Please try again.' ? friendly(err && err.code) : (err && err.message) || 'Something went wrong.');
+        var msg = friendly(err && err.code);
+        if (msg === 'Something went wrong. Please try again.' && err && err.message) msg = err.message;
+        errBox.innerHTML = A.ui.alertBox('danger', '', msg);
+        if (err && err.code === 'username-taken') markInvalid('username', true);
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create my account';
       });

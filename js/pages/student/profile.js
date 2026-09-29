@@ -10,14 +10,12 @@
     onReady: function () { load(); }
   });
 
-  let shared = null;
 
   function load() {
     Promise.all([
       A.repo.getRegistration(A.user.uid),
-      A.repo.getUser(A.user.uid),
-      A.repo.getSharedProfile(A.user.uid)
-    ]).then(function (r) { shared = r[2]; render(r[0], r[1]); });
+      A.repo.getUser(A.user.uid)
+    ]).then(function (r) { render(r[0], r[1]); });
   }
 
   function render(reg, record) {

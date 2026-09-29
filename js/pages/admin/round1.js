@@ -20,6 +20,27 @@
     [attempts, results, quiz, cfg] = await Promise.all([
       A.round1.listAttempts({}), A.round1.listResults(), A.round1.getQuiz(), A.repo.getConfig()
     ]);
+    /* Score anything that arrived since this panel was last opened, before
+       drawing, so a submission shows up with its score already on it.
+
+       The games write a score straight from the browser. This cannot, and
+       should not: the answer key is admin-only, so a score written by the
+       student is a score the student chose. There is no backend to score it
+       for them on the Spark plan, so the admin's own session does it the
+       moment the panel is open. The effect is the same as the games — a
+       finished attempt is scored and ranked without anyone pressing anything —
+       with the scoring done from the only place the key is readable. */
+    const pending = attempts.filter((a) => a.status !== 'in-progress' && a.resultStatus !== 'scored');
+    if (pending.length) {
+      try {
+        await A.round1.scoreAllPending();
+        [attempts, results] = await Promise.all([A.round1.listAttempts({}), A.round1.listResults()]);
+      } catch (e) {
+        /* Leave the list as it is. The button below is still there, and a
+           failure here must not stop the page rendering. */
+        console.warn('auto-scoring skipped:', e && e.message);
+      }
+    }
     render();
   }
 

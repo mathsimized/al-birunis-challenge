@@ -43,7 +43,7 @@
     ba: 'abc_ba',
     announcements: 'abc_announcements',
     audit: 'abc_audit_log',
-    profileLookup: 'users' /* read-only MATHSIMIZED profile */
+    usernames: 'usernames' /* one reservation doc per username */
   };
 
   const CONFIG_ID = 'main';
@@ -122,39 +122,72 @@
    * exactly this query, and it is the only thing read here. A failure is
    * reported as "not available" rather than guessed at, so a network problem
    * can never silently hand two students the same name. */
+  function normaliseUsername(username) {
+    return String(username || '').toLowerCase().trim();
+  }
+
+  /* One document per username, addressed by the name itself, so this is a
+     point read rather than a query and the answer is exact. */
   async function isUsernameAvailable(username) {
-    const value = String(username || '').toLowerCase().trim();
+    const value = normaliseUsername(username);
     if (!value) return { available: false, error: 'A username is required.' };
     if (value.length < 3) return { available: false, error: 'Usernames are at least 3 characters.' };
+    if (value.length > 24) return { available: false, error: 'Usernames are at most 24 characters.' };
     if (!/^[a-z0-9_]+$/.test(value)) return { available: false, error: 'Only lowercase letters, numbers and underscores.' };
     try {
-      const snap = await db().collection(C.profileLookup)
-        .where('username', '==', value).limit(1).get();
-      return snap.empty
-        ? { available: true, error: null }
-        : { available: false, error: 'That username is already taken.' };
+      const snap = await db().collection(C.usernames).doc(value).get();
+      return snap.exists
+        ? { available: false, error: 'That username is already taken.' }
+        : { available: true, error: null };
     } catch (e) {
       return { available: false, error: 'Could not check that username. Please try again.' };
     }
   }
 
-  /* Read-only look-up of the shared MATHSIMIZED profile so a student
-     never has to retype information already held securely. */
-  async function getSharedProfile(uid) {
+  /* Claim a username for this account. The rules refuse the write if the name
+     was taken between the check and here, so a race loses cleanly instead of
+     quietly creating a second student called the same thing. */
+  async function reserveUsername(uid, username) {
+    const value = normaliseUsername(username);
+    await db().collection(C.usernames).doc(value).set({
+      uid: uid,
+      username: value,
+      createdAt: A.server
+    });
+    return value;
+  }
+
+  /* The student's own account record. There is no other profile anywhere,
+     so this is only used to pre-fill the registration form after signup. */
+  async function getProfile(uid) {
     try {
-      const snap = await db().collection(C.profileLookup).doc(uid).get();
+      const snap = await db().collection(C.users).doc(uid).get();
       if (!snap.exists) return null;
       const d = snap.data();
       return {
-        displayName: d.displayName || d.name || d.username || '',
-        email: (d.email || '') ,
-        grade: d.grade || d.class || '',
-        school: d.school || '',
-        city: d.city || ''
+        username: d.username || d.displayName || '',
+        displayName: d.fullName || '',
+        email: d.email || ''
       };
     } catch (e) {
       return null;
     }
+  }
+
+  /* Written once, at signup. Role is decided by the address, not by anything
+     the form submitted, so a student cannot nominate themselves. */
+  async function createUser(user, username) {
+    const isAdminEmail = (user.email || '').toLowerCase() === String(A.ADMIN_EMAIL || '').toLowerCase();
+    const data = {
+      uid: user.uid,
+      username: normaliseUsername(username) || user.displayName || '',
+      email: user.email || '',
+      role: isAdminEmail ? A.ROLE.ADMIN : A.ROLE.STUDENT,
+      createdAt: A.server,
+      updatedAt: A.server
+    };
+    await db().collection(C.users).doc(user.uid).set(data, { merge: true });
+    return data;
   }
 
   /* The competition's own user record holds role + category.
@@ -658,7 +691,8 @@
     C, CONFIG_ID, CATEGORIES, CATEGORY_IDS, categoryLabel, categoryById,
     DEFAULT_CONFIG, CERT_TYPES, certLabel,
     getConfig, onConfig, saveConfig,
-    isUsernameAvailable, getSharedProfile, getUser, ensureUser, isAdmin, listUsers, setUserRole,
+    isUsernameAvailable, reserveUsername, normaliseUsername, getProfile, createUser,
+    getUser, ensureUser, isAdmin, listUsers, setUserRole,
     getRegistration, onRegistration, submitRegistration, updateRegistration, listRegistrations,
     onAnnouncements, listAnnouncements, saveAnnouncement, deleteAnnouncement,
     announcementVisibleTo, ANNOUNCEMENT_AUDIENCES,

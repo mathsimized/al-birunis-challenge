@@ -1,6 +1,6 @@
 /* Al-Biruni\'s Challenge 2026 — session and access control
    ------------------------------------------------------------------
-   Students sign in with their existing Mathsimized identity. This app
+   Students sign in with an account created for this competition. This app
    only ever *reads* the shared MATHSIMIZED `users` document to pre-fill a
    registration form; it never writes to it, and never touches any
    MATHSIMIZED page, stylesheet or script. */
@@ -91,14 +91,35 @@
     return A.auth.currentUser;
   }
 
-  /* A username, not a full name. This is the same account the student uses
-     on MATHSIMIZED, so the full name belongs in the competition registration
-     form, where we need it for certificates — not here, where
-     someone might type a nickname. */
+  /* A username, not a full name. The full name belongs in the competition
+     registration form, where we need it for certificates — not here, where
+     someone might type a nickname.
+
+     This site has its own accounts, so creating the login is not the whole of
+     it: the username is reserved and the user record is written here. If
+     either of those fails the account is deleted again rather than left
+     half-made, because a student with a login and no username cannot register
+     and would be stuck. */
   async function signUp(email, password, username) {
+    const value = A.repo.normaliseUsername(username);
+    const check = await A.repo.isUsernameAvailable(value);
+    if (!check.available) {
+      const e = new Error(check.error || 'That username is not available.');
+      e.code = 'username-taken';
+      throw e;
+    }
+
     const cred = await A.auth.createUserWithEmailAndPassword(email, password);
-    if (username) {
-      try { await cred.user.updateProfile({ displayName: username }); } catch (e) { /* not fatal */ }
+    try {
+      await A.repo.reserveUsername(cred.user.uid, value);
+      await A.repo.createUser(cred.user, value);
+      try { await cred.user.updateProfile({ displayName: value }); } catch (err) { /* not fatal */ }
+    } catch (err) {
+      /* Roll the login back so a half-made account cannot linger. */
+      try { await cred.user.delete(); } catch (e) { /* nothing more we can do */ }
+      const e = new Error('Could not finish creating your account: ' + (err.message || err));
+      e.code = 'signup-incomplete';
+      throw e;
     }
     return cred.user;
   }

@@ -71,126 +71,22 @@ service cloud.firestore {
       return value is timestamp;
     }
 
-    /* ######################################################################
-     * MATHSIMIZED — DO NOT REMOVE
-     *
-     * The live site's current ruleset, copied in exactly as it stands.
-     * Firebase has one ruleset per project and this project is shared, so
-     * deploying this file REPLACES these rules. Every line below is load-
-     * bearing for the existing website. Keep it in sync with the live file,
-     * and run the test suite after any change here.
-     * ###################################################################### */
-
-    function isAdminEmail() {
-      return request.auth != null
-        && request.auth.token.email == "mathsimized@gmail.com";
-    }
-
-    match /{document=**} {
-      allow read, write: if isAdminEmail();
-    }
-
-    // Users - public read so username check works during signup
-    match /users/{userId} {
+    /* ---------------- usernames ----------------
+     * One document per username, named by the username itself, so that
+     * checking whether a name is free is a single read. Anyone may read one:
+     * the document holds only the name and the account id, never an email or
+     * any competition data. A signed-in user may create one for themselves,
+     * and only if it does not already exist, which is what makes two people
+     * pressing "sign up" on the same name resolve to one winner rather than
+     * two students with the same username. Once claimed, a name is permanent:
+     * only an admin can rename it. */
+    match /usernames/{name} {
       allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    // Public read, admin-only write
-    match /games/{document=**} {
-      allow read: if true;
-      allow write: if isAdminEmail();
-    }
-    match /news/{document=**} {
-      allow read: if true;
-      allow write: if isAdminEmail();
-    }
-    match /lectures/{document=**} {
-      allow read: if true;
-      allow write: if isAdminEmail();
-    }
-    match /notes/{document=**} {
-      allow read: if true;
-      allow write: if isAdminEmail();
-    }
-    match /announcements/{document=**} {
-      allow read: if true;
-      allow write: if isAdminEmail();
-    }
-    match /competitions/{document=**} {
-      allow read: if true;
-      allow write: if isAdminEmail();
-    }
-    match /resource_stats/{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    // Scores - any logged in user can write
-    match /scores/{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    // Leaderboard - any logged in user can write
-    match /leaderboard/{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    // Auth-only collections
-    match /chatRooms/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    match /presence/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    match /password_resets/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    match /competition_participants/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    match /bookmarks/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    match /continue_learning/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    match /activity/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    match /downloads/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    match /recently_viewed/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    match /competition_registrations/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    match /achievements/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isAdminEmail();
-    }
-    match /notifications/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isAdminEmail();
-    }
-    match /feedback/{document=**} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isAdminEmail();
-    }
-
-    // Contact form - anyone can submit
-    match /contact/{document} {
-      allow create: if true;
-      allow read, update, delete: if false;
-    }
-
-    // Blocked
-    match /test_collection/{document=**} {
-      allow read, write: if false;
+      allow create: if signedIn()
+        && request.auth.uid == request.resource.data.uid
+        && request.resource.data.keys().hasOnly(['uid', 'username', 'createdAt'])
+        && name == request.resource.data.username;
+      allow update, delete: if isAdmin();
     }
 
     /* ---------------- configuration ---------------- */
@@ -212,11 +108,15 @@ service cloud.firestore {
                     && request.resource.data.keys().hasOnly(
                          ['uid', 'role', 'email', 'displayName', 'username',
                           'createdAt', 'updatedAt', 'lastSeenAt']);
-      /* A student can keep their own role but never change it. The organiser
-         may promote their own record to admin, and nobody can reach a role
-         other than admin through this path. */
+      /* A student can edit their own name and nothing else. The field list is
+         closed rather than "anything but role", because on a site where a
+         student can write their own document, an open list eventually grows a
+         field somebody should not have been able to set — a flag, a rank, a
+         qualification. Adding one here is a deliberate, reviewable edit. */
       allow update: if isAdmin()
                     || (isSelf(uid)
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['email', 'displayName', 'username', 'updatedAt'])
                         && (request.resource.data.role == resource.data.role
                             || (isOrganiser()
                                 && request.resource.data.role == 'admin')));

@@ -1,11 +1,13 @@
 # Al-Biruni's Challenge 2026
 
 A standalone competition website — public site, student portal and
-administrator panel — hosted on the existing MATHSIMIZED Firebase project so
-that participants keep their existing login identity.
+administrator panel — running on its own Firebase project,
+`al-birunis-challenge`.
 
-The existing MATHSIMIZED site is **not** modified in any way. Competition data
-lives in its own `abc_*` collections, with its own rules and admin panel.
+The MATHSIMIZED site is a separate project and is **not** touched in any way:
+separate accounts, separate Firestore, separate rules, nothing read or written
+across. MATHSIMIZED is where the competition is announced from; the experience
+on this site stands on its own.
 
 The Firebase web configuration in `js/firebase-config.js` is committed on
 purpose. A Firebase web API key is not a secret — it ships in the HTML of every
@@ -39,8 +41,8 @@ al-birunis-challenge/
 
 ## 2. Roles
 
-Roles live in `abc_users/{uid}.role` and are never taken from the identity
-provider, so the MATHSIMIZED user record is never mutated.
+Roles live on this site's own `abc_users/{uid}.role`, never on the identity
+provider.
 
 | Role    | Can do |
 | ------- | ------ |
@@ -66,10 +68,18 @@ Other roles are set on **Admin → Users & Access → Accounts**.
 
 ## 2b. One login, two steps
 
-A student has **one** account, the MATHSIMIZED one, and it works here. Signing up
-asks for a **username** (lowercase letters, numbers and underscores, checked for
-availability against the shared `users` collection so it cannot collide with an
-account made on the main site), an email and a password. Nothing else.
+A student has one account, created here. Signing up asks for a **username**
+(lowercase letters, numbers and underscores), an email and a password. Nothing
+else.
+
+The username is reserved at signup and is permanent. Availability is a single
+read of `usernames/{name}`, a document that holds the name and the account id
+and nothing else — deliberately *not* a read of the user collection, which would
+have meant publishing every student's email address just to answer "is this name
+taken". The rules refuse a claim if the name was taken between the check and the
+write, so two people pressing sign up on one name resolve to one account; if any
+step after the login fails, the login is deleted again rather than left
+half-made.
 
 Creating that account sends the student straight into the portal, where the
 **competition registration** form collects the full name, category, school, city,
@@ -99,7 +109,8 @@ filled in once.
 | `abc_certificates/{id}` | certificate code, type, award, inline file or share link, release flag |
 | `abc_announcements/{id}` | notices by audience |
 | `abc_audit_log/{id}` | every privileged action |
-| `users/{uid}` | **read-only** MATHSIMIZED profile, used to prefill forms |
+| `usernames/{name}` | one reservation document per username: the name and the account id, publicly readable |
+| `abc_users/{uid}` | account record — username, email, role |
 
 ## 4. There is no backend
 
@@ -182,7 +193,7 @@ npm install -g firebase-tools
 
 # 2. sign in and select the project
 firebase login
-firebase use mathsimized-e4ff0
+firebase use al-birunis-challenge
 ```
 
 There are no dependencies to install: the site is static and talks to Firebase
@@ -211,9 +222,9 @@ node tests/run-all.js                     # everything below
 Those exist because of bugs they would have caught: `A.repo.listJudges()` was
 exported but never defined, so the Users & Access page threw on load; the
 Brand Ambassador rules let a student read their own count; `importQuestions()`
-wrote 800 operations into a 500-operation batch; and the rules file replaced the
-live MATHSIMIZED ruleset without carrying any of it over, which would have
-broken the existing website on the first deploy.
+wrote 800 operations into a 500-operation batch; and an unescaped apostrophe in
+an inline `<script>` left the login page with a SyntaxError, so it rendered and
+then ignored every click.
 
 To run against the emulators, change `ABC_FIREBASE_CONFIG` in
 `js/firebase-config.js` to the emulator host and set the project id to
@@ -288,8 +299,13 @@ wording for that.
   `abc_results`, which a student can read only for their own released result.
 - There is no judge role, no judge collection and no scoring record. Judging
   results arrive outside the app and only the finalist list is recorded.
-- The shared MATHSIMIZED `users` collection is read-only here; roles live in
-  `abc_users`.
+- `usernames/{name}` is publicly readable and holds only the name and the
+  account id. A user may create one for themselves and never update or delete
+  it, so a claimed username cannot be handed to somebody else.
+- A student's update to their own record is limited to `email`, `displayName`,
+  `username` and `updatedAt`. The list is closed rather than "anything but
+  role", because an open list eventually grows a field nobody should have been
+  able to set.
 - Every privileged action writes to `abc_audit_log`.
 - Certificates are administrator-only to write and readable only by the student
   they belong to.

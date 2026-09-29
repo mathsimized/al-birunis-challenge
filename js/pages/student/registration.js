@@ -125,13 +125,13 @@
     A.renderCategoryChoices('[data-categories]');
     document.getElementById('regEmail').value = (A.user && A.user.email) || '';
 
-    /* Pre-fill from the shared Mathsimized profile where available so the
-       student is not asked for information already held. */
-    A.repo.getSharedProfile(A.user.uid).then(function (p) {
+    /* Pre-fill from the account just created, so a student who signs up and
+       registers in one sitting does not retype their own username. */
+    A.repo.getProfile(A.user.uid).then(function (p) {
       shared = p;
       if (!p) return;
       const set = function (id, val) { if (val && !document.getElementById(id).value) document.getElementById(id).value = val; };
-      set('studentName', p.displayName || (S.record && S.record.displayName));
+      set('studentName', p.displayName);
       set('school', p.school);
       set('city', p.city);
       set('grade', p.grade);

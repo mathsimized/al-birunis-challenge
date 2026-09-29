@@ -38,38 +38,44 @@ const STORAGE_GONE = !fs.existsSync(path.join(ROOT, 'storage.rules'));
     : fail(name + ': parentheses balance');
 });
 
-/* The live MATHSIMIZED site's own rules, one line each. This file replaces the
-   project's entire ruleset, so if one of these disappears the existing website
-   breaks. They are asserted here on every run. */
-const MATHSIMIZED_REQUIRED = [
-  ['users are publicly readable (the username check queries this)', /match \/users\/\{userId\} \{\s*allow read: if true;/],
-  ['users are writable by any signed-in user', /match \/users\/\{userId\} \{[\s\S]{0,120}?allow write: if request\.auth != null;/],
-  ['the admin catch-all', /match \/\{document=\*\*\} \{\s*allow read, write: if isAdminEmail\(\);/],
-  ['the organiser email behind it', /function isAdminEmail\(\)[\s\S]{0,120}?request\.auth\.token\.email == "mathsimized@gmail\.com"/],
-  ['games', /match \/games\//],
-  ['news', /match \/news\//],
-  ['lectures', /match \/lectures\//],
-  ['notes', /match \/notes\//],
-  ['leaderboard', /match \/leaderboard\//],
-  ['scores', /match \/scores\//],
-  ['chatRooms', /match \/chatRooms\//],
-  ['announcements', /match \/announcements\//],
-  ['competitions', /match \/competitions\//],
-  ['resource_stats', /match \/resource_stats\//],
-  ['bookmarks', /match \/bookmarks\//],
-  ['continue_learning', /match \/continue_learning\//],
-  ['activity', /match \/activity\//],
-  ['downloads', /match \/downloads\//],
-  ['recently_viewed', /match \/recently_viewed\//],
-  ['competition_registrations', /match \/competition_registrations\//],
-  ['achievements', /match \/achievements\//],
-  ['notifications', /match \/notifications\//],
-  ['feedback', /match \/feedback\//],
-  ['the contact form can be posted to', /match \/contact\//],
-  ['presence', /match \/presence\//],
-  ['password_resets', /match \/password_resets\//],
-  ['competition_participants', /match \/competition_participants\//]
+/* This is now the competition's own Firebase project. The MATHSIMIZED ruleset
+   that used to be carried over verbatim is gone, along with the reason it had
+   to be: there is no shared project left to break. The checks below replace the
+   28 preservation assertions with the things that matter now. */
+const SPLIT_REQUIRED = [
+  ['the admin is identified by the verified email', /function isOrganiser\(\)[\s\S]{0,160}?request\.auth\.token\.email == 'mathsimized@gmail\.com'/],
+  ['the organiser can bootstrap their own admin record', /isOrganiser\(\)\s*\?\s*request\.resource\.data\.role == 'admin'/],
+
+  /* The username reservation. A stranger may read these, so the document has
+     to stay trivial: no email, no competition data, ever. */
+  ['a username is readable by anyone, to check availability', /match \/usernames\/\{name\} \{\s*allow read: if true;/],
+  ['a username can only be claimed for yourself', /allow create: if signedIn\(\)[\s\S]{0,140}?request\.auth\.uid == request\.resource\.data\.uid/],
+  ['a claim carries nothing but the name and the account id', /hasOnly\(\['uid', 'username', 'createdAt'\]\)/],
+  ['the document is named by the name it claims', /name == request\.resource\.data\.username/],
+  ['a claimed username cannot be taken back or renamed', /allow update, delete: if isAdmin\(\);/],
+
+  ['a self-update can touch only its own display fields', /diff\(resource\.data\)\.affectedKeys\(\)[\s\S]{0,80}?\.hasOnly\(\['email', 'displayName', 'username', 'updatedAt'\]\)/]
 ];
+
+SPLIT_REQUIRED.forEach(([label, re]) => {
+  if (re.test(rules)) pass('split: ' + label);
+  else fail('split: ' + label);
+});
+
+/* Nothing from the old shared project may reappear. Those rules described a
+   site that does not live here, and a copy-paste slip could open write access
+   to a collection nobody is maintaining. */
+['games', 'news', 'lectures', 'notes', 'leaderboard', 'chatRooms', 'bookmarks',
+ 'continue_learning', 'activity', 'downloads', 'recently_viewed',
+ 'competition_participants', 'achievements', 'notifications', 'password_resets',
+ 'resource_stats', 'competitions', 'feedback', 'contact', 'presence', 'scores'
+].forEach((c) => {
+  if (new RegExp('match \\/' + c + '\\/').test(rules)) {
+    fail('split: no leftover MATHSIMIZED rule for ' + c);
+  } else {
+    pass('split: no leftover MATHSIMIZED rule for ' + c);
+  }
+});
 
 /* ---------- every collection the code touches has a rule ---------- */
 const source = [];
@@ -235,18 +241,10 @@ if (fs.existsSync(path.join(ROOT, 'judge')) || fs.existsSync(path.join(ROOT, 'js
   else fail('admin bootstrap: ' + label);
 });
 
-/* This file replaces the whole project's ruleset, so everything the existing
-   MATHSIMIZED site depends on has to survive in it. */
-MATHSIMIZED_REQUIRED.forEach(([label, re]) => {
-  if (re.test(rules)) pass('MATHSIMIZED preserved: ' + label);
-  else fail('MATHSIMIZED preserved: ' + label, 'this rule is missing from firestore.rules');
-});
-
 /* The organiser was locked out of their own panel because the rules made
    creating an admin record impossible. These assert it cannot recur. */
 [
-  ['a student can still only create a student record', /allow create: if isSelf\(uid\)[\s\S]{0,200}?request\.resource\.data\.role == 'admin'[\s\S]{0,200}?:\s*request\.resource\.data\.role == 'student'/],
-  ['the username check still works: users stay publicly readable', /match \/users\/\{userId\} \{\s*allow read: if true;/]
+  ['a student can still only create a student record', /allow create: if isSelf\(uid\)[\s\S]{0,200}?request\.resource\.data\.role == 'admin'[\s\S]{0,200}?:\s*request\.resource\.data\.role == 'student'/]
 ].forEach(([label, re]) => {
   if (re.test(rules)) pass('organiser access: ' + label);
   else fail('organiser access: ' + label);
