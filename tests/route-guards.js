@@ -22,7 +22,6 @@ const grabFn = (sig) => {
 };
 const isPortalRoute = eval('(' + grabFn('function isPortalRoute(') + ')');
 const isAdminRoute = eval('(' + grabFn('function isAdminRoute(') + ')');
-const isJudgeRoute = eval('(' + grabFn('function isJudgeRoute(') + ')');
 const currentRoute = eval('(' + grabFn('function currentRoute(') + ')');
 const ADMIN_ROUTES = grab('ADMIN_ROUTES');
 const PORTAL_ROUTES = grab('PORTAL_ROUTES');
@@ -39,7 +38,6 @@ const cases = [
   ['/student/registration.html', true, false],
   ['/admin/index.html', false, true],
   ['/admin/round2.html', false, true],
-  ['/judge/index.html', false, false],
   ['/index.html', false, false],
   ['/rounds.html', false, false]
 ];

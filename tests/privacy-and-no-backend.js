@@ -298,6 +298,44 @@ if (/bestBtn/.test(read('js/pages/admin/announcements.js'))) {
   fail('announcements: the ceremony copy is one click away in the admin panel');
 }
 
+/* Signing up and registering are two separate steps. The signup form creates
+   the login and nothing else; the portal form collects what the organiser
+   needs. Conflating them was the original bug: full name on the signup page,
+   and a "Continue" button that led to a second page of fields. */
+[
+  ['the signup form asks for a username, not a full name', /id="username"/],
+  ['it does not ask for a full name', /id="name"[^>]*required|for="name"/],
+  ['it has no "Continue" step', /id="nextBtn"/],
+  ['it has no competition-details tab', /Competition details/],
+  ['it creates the account and hands over to the portal', /student\/registration\.html\?required=1&welcome=1/],
+  ['the portal form is where the full name is collected', /Full name/]
+].forEach(([label, re]) => {
+  const page = read('register.html') + read('js/pages/student/registration.js');
+  const banned = /id="nextBtn"|Competition details/.test(re.source) || /id="name"[^>]*required|for="name"/.test(re.source);
+  const found = re.test(page);
+  if (banned ? found : !found) fail('signup flow: ' + label);
+  else pass('signup flow: ' + label);
+});
+
+/* The shared MATHSIMIZED login is the only login. Nothing here may ask for a
+   separate competition account. */
+[
+  ['the login page has no competition details panel', /class="steps"/]
+].forEach(([label, re]) => {
+  if (re.test(read('login.html'))) fail('login page: ' + label);
+  else pass('login page: ' + label);
+});
+
+/* Usernames are checked against the shared collection, so they cannot collide
+   with an account created on the main site. */
+[
+  ['the availability check queries the shared users collection', /C\.profileLookup\)\s*\.where\('username'/],
+  ['a failed check never reports the name as free', /catch \(e\) \{\s*return \{ available: false/]
+].forEach(([label, re]) => {
+  if (re.test(read('js/repo.js'))) pass('username check: ' + label);
+  else fail('username check: ' + label);
+});
+
 if (/certificateAsset/.test(read('js/pages/student/certificates.js'))) {
   pass('certificates: the student portal opens whatever asset was attached');
 } else {

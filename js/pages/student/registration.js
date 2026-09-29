@@ -5,6 +5,10 @@
   const A = ABC;
   const mount = document.querySelector('[data-reg]');
   const required = A.queryParam('required') === '1';
+  /* Set when the student has only just created their account, so the form can
+     explain why they are being asked for a name when they only chose a
+     username a moment ago. */
+  const welcome = A.queryParam('welcome') === '1';
 
   let config = null, shared = null;
 
@@ -44,6 +48,7 @@
       <span class="eyebrow left">Step 1 of the journey</span>
       <h1>Competition registration</h1>
       <p class="muted">Confirm your category and tell us about your school. It takes a minute.</p>
+      ${welcome ? A.ui.alertBox('ok', 'Your account is ready', 'This form is the competition registration. Your name, category and school are what the organiser needs to enter you, and what will appear on your certificates. It is saved to your account, so you only fill this in once.') : ''}
       ${required ? A.ui.alertBox('warn', 'Registration required', 'You need to register before you can take part in Round 1.') : ''}
       <div style="margin:1.5rem 0">${windowNotice()}</div>
       <div data-form></div>`;

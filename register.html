@@ -22,13 +22,7 @@
         </span>
       </a>
       <h1 style="margin-top:2.5rem">Join the challenge.</h1>
-      <p>Registration is free and open to school students across Pakistan. Create your account, confirm your category, and you are registered.</p>
-      <ul class="steps">
-        <li><span class="n">1</span><span>Create your Mathsimized account</span></li>
-        <li><span class="n">2</span><span>Confirm your competition category</span></li>
-        <li><span class="n">3</span><span>Enter your school and city</span></li>
-        <li><span class="n">4</span><span>Take Round 1 when it opens</span></li>
-      </ul>
+      <p>Registration is free and open to school students across Pakistan.</p>
     </div>
     <p class="small" style="color:rgba(223,166,161,.8);margin:0" data-reg-status></p>
   </aside>
@@ -37,86 +31,42 @@
     <div class="auth-card">
       <div class="text-center" style="margin-bottom:1.5rem">
         <h1 style="font-size:2rem;margin-bottom:.35rem">Create your account</h1>
-        <p class="muted small" style="margin:0">This is the same account you use on Mathsimized.</p>
+        <p class="muted small" style="margin:0">The same account you use on Mathsimized. You will enter your competition details in the next step.</p>
       </div>
 
       <div data-error></div>
 
-      <div class="auth-tabs" role="tablist">
-        <button type="button" role="tab" id="tab-acct" aria-selected="true" aria-controls="acctPanel">Account</button>
-        <button type="button" role="tab" id="tab-comp" aria-selected="false" aria-controls="compPanel">Competition details</button>
-      </div>
-
       <form id="regForm" novalidate>
-        <!-- Account -->
-        <div id="acctPanel" role="tabpanel" aria-labelledby="tab-acct">
-          <div class="field" id="f-name">
-            <label for="name">Full name <span class="req">*</span></label>
-            <input class="input" type="text" id="name" autocomplete="name" required placeholder="As it should appear on certificates">
-          </div>
-          <div class="field" id="f-email">
-            <label for="email">Email <span class="req">*</span></label>
-            <input class="input" type="email" id="email" autocomplete="email" required placeholder="you@example.com">
-            <div class="field-error">Enter a valid email address.</div>
-          </div>
-          <div class="field" id="f-pass">
-            <label for="password">Password <span class="req">*</span></label>
-            <input class="input" type="password" id="password" autocomplete="new-password" required>
-            <div class="field-hint" data-pass-hint>At least 6 characters.</div>
-            <div class="field-error">Choose a password of at least 6 characters.</div>
-          </div>
-          <div class="field" id="f-pass2">
-            <label for="password2">Confirm password <span class="req">*</span></label>
-            <input class="input" type="password" id="password2" autocomplete="new-password" required>
-            <div class="field-error">The two passwords do not match.</div>
-          </div>
+        <div class="field" id="f-username">
+          <label for="username">Username <span class="req">*</span></label>
+          <input class="input" type="text" id="username" autocomplete="off" required placeholder="Choose a unique username">
+          <div class="field-hint" id="usernameStatus">Lowercase letters, numbers and underscores only.</div>
+          <div class="field-error">That username is not available.</div>
         </div>
-
-        <!-- Competition details -->
-        <div id="compPanel" role="tabpanel" aria-labelledby="tab-comp" hidden>
-          <fieldset>
-            <legend>Your category</legend>
-            <p class="small muted">You compete in one category throughout. This cannot be changed once your Round 1 attempt begins.</p>
-            <div class="choice-grid" data-categories></div>
-          </fieldset>
-
-          <div class="form-grid">
-            <div class="field" id="f-school">
-              <label for="school">School <span class="req">*</span></label>
-              <input class="input" type="text" id="school" required placeholder="Your school name">
-              <div class="field-error">Please enter your school.</div>
-            </div>
-            <div class="field" id="f-city">
-              <label for="city">City <span class="req">*</span></label>
-              <input class="input" type="text" id="city" required placeholder="e.g. Karachi">
-              <div class="field-error">Please enter your city.</div>
-            </div>
-            <div class="field" id="f-grade">
-              <label for="grade">Grade / year <span class="req">*</span></label>
-              <input class="input" type="text" id="grade" required placeholder="e.g. Grade 10 / Year 1">
-              <div class="field-error">Please enter your grade or year.</div>
-            </div>
-            <div class="field">
-              <label for="parentContact">Parent / guardian contact</label>
-              <input class="input" type="tel" id="parentContact" placeholder="Optional">
-              <div class="field-hint">Used only if the organiser needs to reach you about your entry.</div>
-            </div>
-            <div class="field span-2" id="f-ba">
-              <label for="baCode">Brand Ambassador code</label>
-              <input class="input" type="text" id="baCode" placeholder="e.g. BA-XXXXXX">
-              <div class="field-hint">If a Brand Ambassador referred you, enter their code so their registration is credited. Leave blank if you are registering independently.</div>
-            </div>
-          </div>
+        <div class="field" id="f-email">
+          <label for="email">Email <span class="req">*</span></label>
+          <input class="input" type="email" id="email" autocomplete="email" required placeholder="you@example.com">
+          <div class="field-error">Enter a valid email address.</div>
+        </div>
+        <div class="field" id="f-pass">
+          <label for="password">Password <span class="req">*</span></label>
+          <input class="input" type="password" id="password" autocomplete="new-password" required>
+          <div class="field-hint" data-pass-hint>At least 6 characters.</div>
+          <div class="field-error">Choose a password of at least 6 characters.</div>
+        </div>
+        <div class="field" id="f-pass2">
+          <label for="password2">Confirm password <span class="req">*</span></label>
+          <input class="input" type="password" id="password2" autocomplete="new-password" required>
+          <div class="field-error">The two passwords do not match.</div>
         </div>
 
         <div class="checkline" style="margin:1.25rem 0">
           <input type="checkbox" id="terms" required>
-          <label for="terms">I confirm the information I have given is accurate, and I accept the <a href="rules.html" target="_blank">competition rules</a> and <a href="privacy.html" target="_blank">privacy policy</a>.</label>
+          <label for="terms">I accept the <a href="rules.html" target="_blank">competition rules</a> and <a href="privacy.html" target="_blank">privacy policy</a>.</label>
         </div>
 
         <div class="btn-row">
-          <button class="btn btn-primary btn-lg" type="button" id="nextBtn" style="flex:1">Continue</button>
-          <button class="btn btn-gold btn-lg" type="submit" id="submitBtn" style="flex:1" hidden>Complete registration</button>
+          <button class="btn btn-primary btn-lg" type="submit" id="submitBtn" style="flex:1">Create my account</button>
         </div>
       </form>
 
@@ -146,27 +96,13 @@
   var m = $('[data-emblem-small]');
   if (m) m.innerHTML = A.ui.emblemSVG(44).replace('class="emblem"', 'class="emblem" style="margin:0"');
 
-  A.renderCategoryChoices('[data-categories]');
-
   var form = $('#regForm');
   var errBox = $('[data-error]');
-  var tabAcct = $('#tab-acct'), tabComp = $('#tab-comp');
-  var acctPanel = $('#acctPanel'), compPanel = $('#compPanel');
-  var nextBtn = $('#nextBtn'), submitBtn = $('#submitBtn');
-  var onComp = false;
-
-  function setTab(which) {
-    onComp = which === 'comp';
-    tabAcct.setAttribute('aria-selected', String(!onComp));
-    tabComp.setAttribute('aria-selected', String(onComp));
-    acctPanel.hidden = onComp;
-    compPanel.hidden = !onComp;
-    nextBtn.hidden = onComp;
-    submitBtn.hidden = !onComp;
-    errBox.innerHTML = '';
-  }
-  tabAcct.onclick = function () { setTab('acct'); };
-  tabComp.onclick = function () { setTab('comp'); };
+  var submitBtn = $('#submitBtn');
+  var usernameInput = $('#username');
+  var usernameStatus = $('#usernameStatus');
+  var usernameAvailable = false;
+  var usernameTimer = null;
 
   function friendly(code) {
     switch (code) {
@@ -185,62 +121,70 @@
     return !bad;
   }
 
-  function validateAccount() {
+  function setUsernameState(text, kind) {
+    usernameStatus.textContent = text;
+    usernameStatus.className = kind === 'ok' ? 'field-hint ok' : (kind === 'bad' ? 'field-hint error' : 'field-hint');
+    usernameInput.parentNode.classList.toggle('invalid', kind === 'bad');
+  }
+
+  /* Same rule as MATHSIMIZED: lowercase letters, numbers and underscores. The
+     availability check queries the shared `users` collection, which the shared
+     rules keep publicly readable for exactly this purpose. */
+  usernameInput.addEventListener('input', function () {
+    clearTimeout(usernameTimer);
+    var value = usernameInput.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (value !== usernameInput.value) usernameInput.value = value;
+    usernameAvailable = false;
+    if (!value) { setUsernameState('Lowercase letters, numbers and underscores only.', ''); return; }
+    if (value.length < 3) { setUsernameState('At least 3 characters.', 'bad'); return; }
+    setUsernameState('Checking availability…', '');
+    usernameTimer = setTimeout(function () {
+      A.repo.isUsernameAvailable(value).then(function (res) {
+        if (usernameInput.value !== value) return;
+        usernameAvailable = !!res.available;
+        setUsernameState(res.available ? 'Username available.' : (res.error || 'That username is taken.'),
+          res.available ? 'ok' : 'bad');
+      }).catch(function () {
+        setUsernameState('Could not check that username. Try again in a moment.', 'bad');
+      });
+    }, 400);
+  });
+
+  function validate() {
     var ok = true;
-    ok = markInvalid('f-name', !$('#name').value.trim()) && ok;
+    ok = markInvalid('f-username', !/^[a-z0-9_]{3,}$/.test($('#username').value)) && ok;
+    if (!$('#username').value.trim()) { setUsernameState('Choose a username.', 'bad'); ok = false; }
+    if (!usernameAvailable && /^[a-z0-9_]{3,}$/.test($('#username').value)) {
+      setUsernameState('That username is not available.', 'bad');
+      ok = false;
+    }
     ok = markInvalid('f-email', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('#email').value.trim())) && ok;
     ok = markInvalid('f-pass', $('#password').value.length < 6) && ok;
     ok = markInvalid('f-pass2', $('#password').value !== $('#password2').value) && ok;
+    if (!$('#terms').checked) { errBox.innerHTML = A.ui.alertBox('warn', '', 'Please accept the rules and privacy policy.'); ok = false; }
     return ok;
   }
-
-  function validateCompetition() {
-    var ok = true;
-    var cat = form.querySelector('input[name="category"]:checked');
-    ok = markInvalid('f-school', !$('#school').value.trim()) && ok;
-    ok = markInvalid('f-city', !$('#city').value.trim()) && ok;
-    ok = markInvalid('f-grade', !$('#grade').value.trim()) && ok;
-    if (!cat) { errBox.innerHTML = A.ui.alertBox('warn', '', 'Please choose the category you are entering.'); ok = false; }
-    return ok && !!cat;
-  }
-
-  nextBtn.onclick = function () {
-    if (!validateAccount()) return;
-    errBox.innerHTML = '';
-    setTab('comp');
-    var first = compPanel.querySelector('input, input[type=text]');
-    if (first) first.focus();
-  };
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     errBox.innerHTML = '';
-    if (!validateCompetition()) return;
+    if (!validate()) return;
 
-    var catEl = form.querySelector('input[name="category"]:checked');
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner"></span> Creating your account…';
 
-    A.session.signUp($('#email').value.trim(), $('#password').value, $('#name').value.trim())
-      .then(function (cred) {
-        return A.repo.submitRegistration(cred.user.uid, {
-          studentName: $('#name').value.trim(),
-          category: catEl.value,
-          school: $('#school').value.trim(),
-          city: $('#city').value.trim(),
-          grade: $('#grade').value.trim(),
-          parentContact: $('#parentContact').value.trim(),
-          baCode: $('#baCode').value.trim()
-        }, { displayName: $('#name').value.trim(), email: cred.user.email });
-      })
+    /* The account is the only thing created here. The competition details —
+       full name, category, school — are filled in on the portal straight
+       after, and that is where the organiser needs them. */
+    A.session.signUp($('#email').value.trim(), $('#password').value, $('#username').value.trim())
       .then(function () {
-        A.ui.toast('You are registered. Welcome to Al-Biruni\'s Challenge 2026.', 'ok');
-        A.redirect('student/dashboard.html');
+        A.ui.toast('Account created. One more step: tell us about yourself.', 'ok');
+        A.redirect('student/registration.html?required=1&welcome=1');
       })
       .catch(function (err) {
         errBox.innerHTML = A.ui.alertBox('danger', '', friendly(err && err.code) !== 'Something went wrong. Please try again.' ? friendly(err && err.code) : (err && err.message) || 'Something went wrong.');
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Complete registration';
+        submitBtn.textContent = 'Create my account';
       });
   });
 

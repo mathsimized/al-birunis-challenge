@@ -38,8 +38,6 @@
     results: 'abc_results',
     publicResults: 'abc_public_results',
     round2: 'abc_round2_submissions',
-    judgements: 'abc_round2_judgements',
-    judges: 'abc_judges',
     finalists: 'abc_finalists',
     certificates: 'abc_certificates',
     ba: 'abc_ba',
@@ -112,6 +110,31 @@
   }
 
   /* ---------------- identity & roles ---------------- */
+  /* Is this username free?
+   *
+   * The check runs against the shared MATHSIMIZED `users` collection, not
+   * against ours, because a username has to be unique across the whole
+   * project — someone who signed up on the main site has already claimed
+   * theirs. The shared rules keep that collection publicly readable for
+   * exactly this query, and it is the only thing read here. A failure is
+   * reported as "not available" rather than guessed at, so a network problem
+   * can never silently hand two students the same name. */
+  async function isUsernameAvailable(username) {
+    const value = String(username || '').toLowerCase().trim();
+    if (!value) return { available: false, error: 'A username is required.' };
+    if (value.length < 3) return { available: false, error: 'Usernames are at least 3 characters.' };
+    if (!/^[a-z0-9_]+$/.test(value)) return { available: false, error: 'Only lowercase letters, numbers and underscores.' };
+    try {
+      const snap = await db().collection(C.profileLookup)
+        .where('username', '==', value).limit(1).get();
+      return snap.empty
+        ? { available: true, error: null }
+        : { available: false, error: 'That username is already taken.' };
+    } catch (e) {
+      return { available: false, error: 'Could not check that username. Please try again.' };
+    }
+  }
+
   /* Read-only look-up of the shared MATHSIMIZED profile so a student
      never has to retype information already held securely. */
   async function getSharedProfile(uid) {
@@ -168,9 +191,6 @@
 
   function isAdmin(userRecord) {
     return !!userRecord && userRecord.role === A.ROLE.ADMIN;
-  }
-  function isJudge(userRecord) {
-    return !!userRecord && (userRecord.role === A.ROLE.JUDGE || userRecord.role === A.ROLE.ADMIN);
   }
 
   async function listUsers() {
@@ -292,7 +312,7 @@
 
   /* An announcement is shown to a student when it is published and its
      audience matches that student. Audience values: 'all', 'registered',
-     'round1', 'qualified', 'finalists', 'judges', plus category ids. */
+     'round1', 'qualified', 'finalists', plus category ids. */
   /* Audiences are stored as a single string: 'everyone', 'students',
      'ambassadors', 'finalists', 'qualified', 'round1', or a category id. */
   const ANNOUNCEMENT_AUDIENCES = {
@@ -327,7 +347,7 @@
      is what a student types on the registration form.
 
      abc_ba is administrator-only. That is the whole privacy design: the
-     attributed counts are never readable by a student, by a judge, or by
+     attributed counts are never readable by a student, or by
      anyone who signs up, so there is nothing to leak. */
   async function createBA(data) {
     const name = String(data.name || '').trim();
@@ -470,43 +490,6 @@
   function onPublicBATopFive(cb) {
     return db().collection(C.publicBa).doc('topFive')
       .onSnapshot((snap) => cb(snap.exists ? snap.data() : null));
-  }
-
-  /* ---------------- judges ---------------- */
-  /* A judge record exists so the Round 2 panel can be administered without
-     touching roles. authUid is what links it to a Firebase account, and it is
-     what judgements are written under. */
-  async function listJudges() {
-    const snap = await db().collection(C.judges).get();
-    return A.sortBy(snap.docs.map((d) => Object.assign({ id: d.id }, d.data())), (j) => j.name);
-  }
-
-  async function upsertJudge(data, id) {
-    const name = String(data.name || '').trim();
-    if (!name) throw new Error('A judge needs a name.');
-    const payload = {
-      name,
-      email: String(data.email || '').trim(),
-      focus: String(data.focus || '').trim(),
-      authUid: String(data.authUid || '').trim(),
-      active: data.active !== false,
-      updatedAt: A.server
-    };
-    if (id) {
-      await db().collection(C.judges).doc(id).update(payload);
-      await audit('judge_update', { id });
-      return id;
-    }
-    const ref = await db().collection(C.judges).add(Object.assign({ createdAt: A.server }, payload));
-    await audit('judge_create', { id: ref.id });
-    return ref.id;
-  }
-
-  async function deleteJudge(id) {
-    await db().collection(C.judges).doc(id).delete();
-    /* Their judgements stay: another judge may need to see the context, and a
-       deleted judge must not silently erase a score that was counted. */
-    await audit('judge_delete', { id });
   }
 
   /* ---------------- certificates ---------------- */
@@ -667,13 +650,12 @@
     C, CONFIG_ID, CATEGORIES, CATEGORY_IDS, categoryLabel, categoryById,
     DEFAULT_CONFIG, CERT_TYPES, certLabel,
     getConfig, onConfig, saveConfig,
-    getSharedProfile, getUser, ensureUser, isAdmin, isJudge, listUsers, setUserRole,
+    isUsernameAvailable, getSharedProfile, getUser, ensureUser, isAdmin, listUsers, setUserRole,
     getRegistration, onRegistration, submitRegistration, updateRegistration, listRegistrations,
     onAnnouncements, listAnnouncements, saveAnnouncement, deleteAnnouncement,
     announcementVisibleTo, ANNOUNCEMENT_AUDIENCES,
     getBA, createBA, updateBA, deleteBA, listBAs, setBAStatus, baLeaderboard,
     attributeRegistrations, publishPublicBATopFive, unpublishPublicBATopFive, onPublicBATopFive,
-    listJudges, upsertJudge, deleteJudge,
     listCertificates, getCertificatesForUser, onCertificatesForUser, issueCertificate,
     releaseCertificate, withdrawCertificate, uploadCertificateFile, setCertificateLink,
     certificateAsset, MAX_CERTIFICATE_BYTES, deleteCertificate,

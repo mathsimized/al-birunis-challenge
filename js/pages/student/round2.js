@@ -1,4 +1,4 @@
-/* Round 2 — brief, rubric, window state and the student's own status.
+/* Round 2 — brief, window state and the student's own status.
    The submission form itself lives in round2-submit.html. */
 (function () {
   'use strict';
@@ -61,7 +61,7 @@
     } else if (state.code === 'upcoming') {
       banner = note('info', 'Submissions have not opened yet', 'Round 2 submissions open on ' + A.fmtDateTime(state.opensAt) + '.');
     } else if (state.code === 'closed') {
-      banner = note('warn', 'Submissions are closed', 'The Round 2 submission window has closed. Your submitted work is now with the judges.');
+      banner = note('warn', 'Submissions are closed', 'The Round 2 submission window has closed. Your submitted work is now with the panel for assessment.');
     } else if (sub && sub.locked) {
       banner = note('ok', 'Your submission is in', 'Your Round 2 work has been submitted and is with the judging panel.');
     } else {
@@ -84,22 +84,8 @@
           </div>
 
           <div class="card">
-            <h2 style="font-size:1.2rem">Judging criteria</h2>
-            ${cfg.rubric && cfg.rubric.length ? `
-              <div class="table-wrap" style="margin-top:1rem">
-                <table class="data">
-                  <thead><tr><th>Criterion</th><th>What judges look for</th><th class="num">Max</th></tr></thead>
-                  <tbody>
-                    ${cfg.rubric.map((c) => `<tr>
-                      <td><strong>${A.esc(c.label)}</strong></td>
-                      <td>${A.esc(c.hint || '')}</td>
-                      <td class="num">${A.esc(A.num(c.max, 10))}</td>
-                    </tr>`).join('')}
-                  </tbody>
-                </table>
-              </div>
-              <p class="field-hint" style="margin-top:.75rem">Your work is scored by a panel of judges${cfg.useWeights ? ', combined as a weighted average' : ', averaged across judges'}. Individual judge scores are never shown to students.</p>
-            ` : note('info', '', 'The judging criteria for Round 2 have not been finalised yet. They will be published here before submissions open.')}
+            <h2 style="font-size:1.2rem">How your work is assessed</h2>
+            ${note('info', '', 'Round 2 submissions are reviewed by the panel and assessed off this website. Nothing about the assessment is shown to you, and the criteria will be published here once they are decided.')}
           </div>
 
           ${sub ? submissionCard(sub) : ''}

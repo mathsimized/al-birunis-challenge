@@ -89,7 +89,7 @@
       r2Body = `<p style="margin:0">You progressed to the Grand Finale as a finalist.</p>`;
     } else if (sub && (sub.status === 'submitted')) {
       r2Status = 'done';
-      r2Body = `<p style="margin:0">Your presentation was submitted${sub.locked ? ' and is locked' : ''}. It is now with the judges.</p>
+      r2Body = `<p style="margin:0">Your presentation was submitted${sub.locked ? ' and is locked' : ''}. It is now with the panel.</p>
         <div class="figures"><div><span class="figure-label">Submitted</span><span class="figure-value" style="font-size:1.1rem">${A.fmtDate(sub.submittedAt)}</span></div></div>`;
       r2Action = `<a class="btn btn-outline" href="round2.html">View submission</a>`;
     } else if (qualified && round2Open) {

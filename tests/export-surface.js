@@ -97,7 +97,7 @@ Object.entries(MODULES).forEach(([ns, [rel, extract]]) => {
 /* ---------- helpers attached straight onto ABC ----------
  * core.js publishes through Object.assign(global.ABC, {...}), and admin.js,
  * judge.js, session.js and portal.js attach further helpers with A.x = ... */
-const GLOBAL_FILES = ['js/core.js', 'js/admin.js', 'js/judge.js', 'js/session.js', 'js/portal.js', 'js/page.js', 'js/firebase-config.js'];
+const GLOBAL_FILES = ['js/core.js', 'js/admin.js', 'js/session.js', 'js/portal.js', 'js/page.js', 'js/firebase-config.js'];
 const globalSurface = new Set();
 GLOBAL_FILES.forEach((rel) => {
   const text = fs.readFileSync(path.join(ROOT, rel), 'utf8');

@@ -1,11 +1,14 @@
-/* Finalist selection — confirm who reaches the Grand Finale, set their
-   award, and release their finalist area. */
+/* Finalists — who reaches the Grand Finale, their award, and publishing.
+ *
+   Judging happens off the platform, so there is no ranked list and no score
+   here. The organiser works from the results they were given, confirms the
+   students by name, and then releases the list. */
 (function () {
   'use strict';
   const A = ABC;
   const host = document.querySelector('[data-host]');
 
-  let cfg = null, finale = null, submissions = [], judgements = {}, finalists = [];
+  let cfg = null, finale = null, submissions = [], finalists = [];
   const state = { category: '' };
 
   A.admin({
@@ -20,42 +23,32 @@
       A.round2.getRound2Config(), A.round2.getFinaleConfig(),
       A.round2.listSubmissions({}), A.round2.listFinalists()
     ]);
-    judgements = await A.round2.listAllJudgements();
     render();
   }
 
   function render() {
-    const ranked = A.round2.rankSubmissions(submissions.filter((s) => !state.category || s.category === state.category), judgements, cfg);
+    const listed = A.round2.listByArrival(submissions.filter((s) => !state.category || s.category === state.category));
     const quotaRaw = cfg.quotaPerCategory;
     const confirmed = finalists.filter((f) => !state.category || f.category === state.category);
 
     host.innerHTML = `
       <div class="grid grid-4" style="gap:1rem">
-        ${stat('Ranked submissions', ranked.length, 'From the Round 2 panel')}
+        ${stat('Submissions', listed.length, 'Round 2 entries in this view')}
         ${stat('Finalists confirmed', finalists.length, 'Across all categories')}
         ${stat('Released to students', finalists.filter((f) => f.released).length, 'Finalist area visible')}
         ${stat('Awards set', finalists.filter((f) => f.award).length, '')}
       </div>
 
       <div class="panel" style="margin-top:1.5rem">
-        <div class="panel-header"><h2>Confirm finalists from the ranked list</h2></div>
+        <div class="panel-header"><h2>Confirm finalists by name</h2></div>
         <div class="panel-body">
-          <div class="toolbar" style="margin-bottom:1rem">
-            <div class="field">
-              <label for="cat">Category</label>
-              <select class="select" id="cat">
-                <option value=""${state.category === '' ? ' selected' : ''}>All categories</option>
-                ${A.repo.CATEGORIES.map((c) => `<option value="${c.id}"${state.category === c.id ? ' selected' : ''}>${A.esc(c.label)}</option>`).join('')}
-              </select>
-            </div>
-            <div class="field">
-              <label for="n">Confirm top N of this category</label>
-              <input class="input" type="number" min="1" id="n" value="10">
-              <div class="field-hint">The intended quota is 10 per category, but it is not confirmed — you choose here.</div>
-            </div>
-            <div class="field" style="align-self:flex-end">
-              <button class="btn btn-primary" id="confirmTopBtn">Confirm top N</button>
-            </div>
+          ${A.ui.alertBox('info', 'Confirm each student yourself. ', 'The results were given to you off this website, so there is no ranking to calculate here. Tick a name to confirm them as a finalist.')}
+          <div class="field" style="max-width:320px;margin:1rem 0">
+            <label for="cat">Category</label>
+            <select class="select" id="cat">
+              <option value=""${state.category === '' ? ' selected' : ''}>All categories</option>
+              ${A.repo.CATEGORIES.map((c) => `<option value="${c.id}"${state.category === c.id ? ' selected' : ''}>${A.esc(c.label)}</option>`).join('')}
+            </select>
           </div>
           <div data-table></div>
         </div>
@@ -79,65 +72,43 @@
       </div>`;
 
     host.querySelector('#cat').addEventListener('change', function () { state.category = this.value; render(); });
-    host.querySelector('#confirmTopBtn').addEventListener('click', function () {
-      const cat = state.category;
-      if (!cat) { A.ui.toast('Choose a category first.', 'error'); return; }
-      const n = A.num(host.querySelector('#n').value, 0);
-      if (n < 1) { A.ui.toast('Enter how many finalists to confirm.', 'error'); return; }
-      const list = submissions.filter((s) => s.category === cat);
-      A.confirmRun({
-        title: `Confirm the top ${n} ${A.repo.categoryLabel(cat)} ${A.plural(n, 'finalist')}?`,
-        message: 'The highest-scoring submissions in this category are marked as finalists. Existing confirmations are kept.',
-        confirmLabel: 'Confirm', button: this, busyLabel: 'Confirming…',
-        run: function () { return A.round2.confirmTopN(cat, n, list, judgements, cfg); },
-        success: 'Finalists confirmed.'
-      }).then(load).catch(function () {});
-    });
     host.querySelector('#exportBtn').addEventListener('click', function () {
       A.exportCSV('al-birunis-finalists.csv', [
         { key: 'name', label: 'Student' },
         { key: 'category', label: 'Category', csv: (f) => A.repo.categoryLabel(f.category) },
         { key: 'school', label: 'School' },
         { key: 'city', label: 'City' },
-        { key: 'rank', label: 'Round 2 rank' },
-        { key: 'finalScore', label: 'Round 2 score' },
         { key: 'award', label: 'Award', csv: (f) => (A.round2.AWARDS[f.award] || {}).label || '' },
         { key: 'released', label: 'Released', csv: (f) => (f.released ? 'Yes' : 'No') }
       ], finalists);
     });
 
-    drawRanked(ranked);
+    drawRanked(listed);
     drawFinalists(confirmed);
   }
 
-  function drawRanked(ranked) {
+  function drawRanked(listed) {
     const el = document.querySelector('[data-table]');
     el.innerHTML = A.table([
-      { key: 'rank', label: 'Rank', className: 'rank-cell', render: (r) => A.esc(r.rank ? A.ordinal(r.rank) : '—') },
-      { key: 'studentName', label: 'Student', render: (r) => `<strong>${A.esc(r.studentName || '—')}</strong><div class="small muted">${A.esc(r.school || '')}</div>` },
-      { key: 'title', label: 'Presentation' },
-      { key: 'finalScore', label: 'Score', className: 'num', render: (r) => (r.finalScore === null ? '—' : A.esc(r.finalScore)) },
-      { key: 'judgeCount', label: 'Judged', render: (r) => `${A.esc(A.num(r.judgeCount))} judges` },
+      { key: 'studentName', label: 'Student', render: (r) => `<strong>${A.esc(r.studentName || '—')}</strong><div class="small muted">${A.esc(r.school || '')}${r.city ? ' · ' + A.esc(r.city) : ''}</div>` },
+      { key: 'category', label: 'Category', render: (r) => A.esc(A.repo.categoryLabel(r.category)) },
+      { key: 'title', label: 'Presentation', render: (r) => `<div>${A.esc(r.title || 'Untitled')}</div>${r.topic ? `<div class="small muted">${A.esc(r.topic)}</div>` : ''}` },
+      { key: 'submittedAt', label: 'Submitted', render: (r) => A.fmtDateTime(r.submittedAt) },
       {
         label: 'Finalist', render: (r) => (finalists.some((f) => f.uid === r.uid)
           ? A.statusBadge('finalist')
           : `<button class="btn btn-outline btn-sm" data-confirm="${A.esc(r.uid)}">Confirm</button>`)
       }
-    ], ranked, {
-      rowClass: (r) => (r.rank && r.rank <= 3 ? 'rank-' + r.rank : ''),
-      emptyTitle: 'Nothing ranked yet',
-      emptyMessage: 'Submissions appear here once judges have scored them.'
+    ], listed, {
+      emptyTitle: 'No submissions',
+      emptyMessage: 'Round 2 submissions appear here once students submit them.'
     });
 
     el.querySelectorAll('[data-confirm]').forEach((b) => b.addEventListener('click', function () {
       const uid = this.getAttribute('data-confirm');
       const s = submissions.find((x) => x.uid === uid);
-      /* Rank and score live on the ranked row, not on the raw submission. */
-      const r = ranked.find((x) => x.uid === uid) || {};
       A.round2.confirmFinalist(uid, {
         name: s.studentName, school: s.school, city: s.city, category: s.category,
-        rank: r.rank === undefined ? null : r.rank,
-        finalScore: r.finalScore === undefined ? null : r.finalScore,
         source: 'round2', email: s.email
       }).then(function () { A.ui.toast('Finalist confirmed.', 'ok'); load(); })
         .catch(function (err) { A.ui.toast(err.message || 'Could not confirm.', 'error'); });
@@ -149,7 +120,6 @@
     el.innerHTML = A.table([
       { key: 'name', label: 'Student', render: (f) => `<strong>${A.esc(f.name || '—')}</strong><div class="small muted">${A.esc(f.school || '')}${f.city ? ' · ' + A.esc(f.city) : ''}</div>` },
       { key: 'category', label: 'Category', render: (f) => A.esc(A.repo.categoryLabel(f.category)) },
-      { key: 'rank', label: 'Round 2 rank', className: 'num', render: (f) => A.esc(A.num(f.rank)) },
       { key: 'award', label: 'Award', render: (f) => awardSelect(f) },
       { key: 'finalRank', label: 'Final rank', render: (f) => `<input class="input" style="width:90px" type="number" min="1" data-finalrank="${A.esc(f.uid)}" value="${f.finalRank === undefined || f.finalRank === null ? '' : A.esc(f.finalRank)}">` },
       { key: 'released', label: 'Finalist area', render: (f) => (f.released ? A.statusBadge('approved') : A.statusBadge('pending')) },
@@ -160,7 +130,7 @@
           <button class="btn btn-ghost btn-sm" data-remove="${A.esc(f.uid)}">Remove</button>
         </div>`
       }
-    ], list, { emptyTitle: 'No finalists confirmed', emptyMessage: 'Confirm from the ranked list above.' });
+    ], list, { emptyTitle: 'No finalists confirmed', emptyMessage: 'Confirm from the list above.' });
 
     el.querySelectorAll('[data-award]').forEach((sel) => sel.addEventListener('change', function () {
       const f = finalists.find((x) => x.uid === this.getAttribute('data-award'));

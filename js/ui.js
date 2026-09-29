@@ -39,7 +39,6 @@
 
   const NAV_ADMIN = [
     { section: 'Overview' },
-    { href: 'judge/index.html', label: 'My Judging Sheet', glyph: '✎' },
     { href: 'admin/index.html', label: 'Dashboard', glyph: '◈' },
     { href: 'admin/settings.html', label: 'Competition Settings', glyph: '⚙' },
     { href: 'admin/registrations.html', label: 'Registrations', glyph: '✎' },

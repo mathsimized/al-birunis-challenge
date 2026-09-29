@@ -77,12 +77,12 @@
                 <div class="field span-2" id="f-url">
                   <label for="driveUrl">Google Drive link <span class="req">*</span></label>
                   <input class="input" type="url" id="driveUrl" ${editable ? '' : 'disabled'} value="${A.esc(sub ? sub.driveUrl : '')}" placeholder="https://drive.google.com/file/d/…">
-                  <div class="field-hint">Set the sharing to &ldquo;Anyone with the link can view&rdquo; so judges can open it.</div>
+                  <div class="field-hint">Set the sharing to &ldquo;Anyone with the link can view&rdquo; so the panel can open it.</div>
                   <div class="field-error" data-url-err style="display:none"></div>
                 </div>
                 <div class="field span-2">
-                  <label for="notes">Notes for the judges</label>
-                  <textarea class="input" id="notes" rows="3" ${editable ? '' : 'disabled'} placeholder="Optional — anything the judges should know">${A.esc(sub ? sub.notes : '')}</textarea>
+                  <label for="notes">Notes for the panel</label>
+                  <textarea class="input" id="notes" rows="3" ${editable ? '' : 'disabled'} placeholder="Optional — anything the panel should know">${A.esc(sub ? sub.notes : '')}</textarea>
                 </div>
               </div>
             </fieldset>

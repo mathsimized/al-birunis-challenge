@@ -1,6 +1,6 @@
 # Al-Biruni's Challenge 2026
 
-A standalone competition website — public site, student portal, judge panel and
+A standalone competition website — public site, student portal and
 administrator panel — hosted on the existing MATHSIMIZED Firebase project so
 that participants keep their existing login identity.
 
@@ -24,14 +24,12 @@ al-birunis-challenge/
 │   forgot-password.html reset-password.html
 ├── student/                       student portal (10 pages)
 ├── admin/                         admin panel (14 pages)
-├── judge/index.html               judge scoring sheet
 ├── js/
 │   ├── firebase-config.js         project config + auth
 │   ├── core.js  ui.js  repo.js    shared runtime
 │   ├── round1.js round2.js       competition logic
-│   ├── session.js portal.js admin.js judge.js page.js
-│   ├── judge.js                   judge bootstrap
-│   └── pages/{public,student,admin,judge}/
+│   ├── session.js portal.js admin.js page.js
+│   └── pages/{public,student,admin}/
 ├── css/main.css                   single stylesheet
 ├── assets/                        images and emblems
 ├── tests/                         route, link and privacy checks
@@ -47,17 +45,33 @@ provider, so the MATHSIMIZED user record is never mutated.
 | Role    | Can do |
 | ------- | ------ |
 | student | own registration, attempt, result, Round 2 submission, certificates, and the answer-free Round 1 question paper |
-| judge   | read Round 2 submissions, write **only** their own scores |
 | admin   | the whole competition panel |
 
-The organiser account is `mathsimized@gmail.com`. Set the role of an account on
-**Admin → Users & Access → Accounts**.
+There is no judge role. **Round 2 is judged off this platform.** The organiser
+receives the results separately, then marks the qualifying students on
+**Admin → Round 2** and publishes their names on **Admin → Finalists**. No
+scores, rubric or judge records are stored anywhere in the app, so there is
+nothing for them to leak from.
 
-A judge signs in and goes straight to `judge/index.html` — the sidebar link
-**My Judging Sheet**. They see the submissions, the rubric and their own scores,
-and nothing else: not other judges' scores, not the aggregate, not the ranking.
-Copy the judge's Firebase user id into their record on **Users & Access →
-Judges** so the panel and the judging sheet write the same document.
+The organiser account is `mathsimized@gmail.com`. That address is granted the
+admin role from its verified sign-in token, so the panel can never lock the
+organiser out of their own site — an earlier version required an existing admin
+to create the record, which is impossible for the first admin. Roles for other
+accounts are set on **Admin → Users & Access → Accounts**.
+
+## 2b. One login, two steps
+
+A student has **one** account, the MATHSIMIZED one, and it works here. Signing up
+asks for a **username** (lowercase letters, numbers and underscores, checked for
+availability against the shared `users` collection so it cannot collide with an
+account made on the main site), an email and a password. Nothing else.
+
+Creating that account sends the student straight into the portal, where the
+**competition registration** form collects the full name, category, school, city,
+grade and optional Brand Ambassador code. The full name belongs there rather than
+on the signup page because it is what appears on certificates, and because a
+username is what someone signs in with. It is saved to the account, so it is
+filled in once.
 
 ## 3. Data model
 
@@ -75,10 +89,8 @@ Judges** so the panel and the judging sheet write the same document.
 | `abc_results/{uid}` | private result, rank, qualification, release flag |
 | `abc_public_results/{category}` | published, deliberately limited leaderboard snapshot |
 | `abc_round2_submissions/{uid}` | presentation links and status |
-| `abc_round2_judgements/{id}` | one row per judge per submission |
 | `abc_finalists/{uid}` | finalist confirmation, award, release flag |
 | `abc_config/grandFinale` | venue, schedule, interview plan |
-| `abc_judges/{id}` | judging panel |
 | `abc_certificates/{id}` | certificate code, type, award, inline file or share link, release flag |
 | `abc_announcements/{id}` | notices by audience |
 | `abc_audit_log/{id}` | every privileged action |
@@ -191,9 +203,12 @@ node tests/run-all.js                     # everything below
 | `tests/export-surface.js` | every `A.repo.x` / `A.round1.x` call resolves to something the module really defines |
 | `tests/privacy-and-no-backend.js` | no backend creeps back in, and no Brand Ambassador count can reach a student |
 
-The last two exist because of bugs they would have caught: `A.repo.listJudges()`
-was exported but never defined, so the Users & Access page would have thrown on
-load, and the Brand Ambassador rules let a student read their own count.
+Those exist because of bugs they would have caught: `A.repo.listJudges()` was
+exported but never defined, so the Users & Access page threw on load; the
+Brand Ambassador rules let a student read their own count; `importQuestions()`
+wrote 800 operations into a 500-operation batch; and the rules file replaced the
+live MATHSIMIZED ruleset without carrying any of it over, which would have
+broken the existing website on the first deploy.
 
 To run against the emulators, change `ABC_FIREBASE_CONFIG` in
 `js/firebase-config.js` to the emulator host and set the project id to
@@ -221,8 +236,9 @@ the new collections are never briefly unguarded.
 4. **Results** — after the window closes, press **Score all pending**. The
    breakdown flags any attempt that looks like it was left open. Then rebuild
    ranks, release individual results, and publish a limited public leaderboard.
-5. **Round 2** — open submissions, add judges, judge, then confirm finalists and
-   release the finalist area.
+5. **Round 2** — open submissions. When your results arrive, tick the students
+   who qualified, then publish their names and release the finalist area. There
+   is no scoring to do here: judging happens off the platform.
 6. **Certificates** — issue in bulk, upload each file from the panel, then
    release. Students see them in their portal.
 7. **Announcements** — publish to everyone, a category, or the finalists only.
@@ -265,7 +281,8 @@ wording for that.
 - The public top five is a separate snapshot that never holds a count.
 - Public results are a separate, sanitised snapshot. The full ranking stays in
   `abc_results`, which a student can read only for their own released result.
-- A judge's own score is the only judgement they can read or write.
+- There is no judge role, no judge collection and no scoring record. Judging
+  results arrive outside the app and only the finalist list is recorded.
 - The shared MATHSIMIZED `users` collection is read-only here; roles live in
   `abc_users`.
 - Every privileged action writes to `abc_audit_log`.

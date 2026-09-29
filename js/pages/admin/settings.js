@@ -33,7 +33,7 @@
         <button class="tab" role="tab" aria-selected="true" data-tab="general">General</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="windows">Windows &amp; quotas</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="r1">Round 1 quiz</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="r2">Round 2 brief &amp; rubric</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="r2">Round 2 brief</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="finale">Grand Finale</button>
       </div>
 
@@ -174,15 +174,8 @@
       <div class="field" style="margin-top:1rem"><label for="brief">Brief</label><textarea class="textarea" id="brief" rows="4">${A.esc(r2cfg.brief)}</textarea></div>
       <div class="field" style="margin-top:1rem"><label for="instructions">Additional instructions for students</label><textarea class="textarea" id="instructions" rows="3">${A.esc(r2cfg.instructions)}</textarea></div>
 
-      <h3 style="font-size:1.05rem;margin-top:1.5rem">Judging rubric</h3>
-      <p class="small muted">The rubric is not finalised. Add criteria only when they are decided — judges score against exactly this list.</p>
-      <div data-rubric></div>
-      <div class="btn-row" style="margin-top:.75rem">
-        <button class="btn btn-outline btn-sm" type="button" id="addCriterion">Add criterion</button>
-      </div>
+      ${A.ui.alertBox('info', 'Judging happens off this website. ', 'There is no rubric here, and no scores are stored. You receive the results separately, then mark the finalists on the Round 2 page and publish their names.')}
       <div style="margin-top:1rem">
-        <div class="checkline"><input type="checkbox" id="useWeights" ${r2cfg.useWeights ? 'checked' : ''}><label for="useWeights">Combine judges as a weighted average (uses each criterion's max as its weight)</label></div>
-        <div class="checkline"><input type="checkbox" id="requireAllJudges" ${r2cfg.requireAllJudges ? 'checked' : ''}><label for="requireAllJudges">A submission is complete only once every assigned judge has scored</label></div>
         <div class="checkline"><input type="checkbox" id="resultsReleasedToStudents" ${r2cfg.resultsReleasedToStudents ? 'checked' : ''}><label for="resultsReleasedToStudents">Round 2 results released to students</label></div>
         <div class="field" style="max-width:280px;margin-top:1rem">
           <label for="status">Round 2 status</label>
@@ -194,42 +187,6 @@
         </div>
       </div>`;
 
-    const rubricHost = el('r2').querySelector('[data-rubric]');
-    const criteria = (r2cfg.rubric || []).slice();
-    drawRubric(rubricHost, criteria);
-    el('r2').querySelector('#addCriterion').addEventListener('click', function () {
-      criteria.push({ id: 'c' + (criteria.length + 1), label: '', hint: '', max: 10 });
-      drawRubric(rubricHost, criteria);
-    });
-    readForm.rubric = () => criteria
-      .filter((c) => c.label && c.label.trim())
-      .map((c) => ({ id: c.id || A.uid('c'), label: c.label.trim(), hint: (c.hint || '').trim(), max: A.num(c.max, 10) }));
-  }
-
-  function drawRubric(rubricHost, criteria) {
-    rubricHost.innerHTML = criteria.length ? criteria.map((c, i) => `
-      <div class="rubric-row" data-i="${i}">
-        <div class="field"><label>Criterion</label><input class="input" data-label value="${A.esc(c.label || '')}" placeholder="e.g. Mathematical accuracy"></div>
-        <div class="field grow"><label>What judges look for</label><input class="input" data-hint value="${A.esc(c.hint || '')}"></div>
-        <div class="field short"><label>Max</label><input class="input" data-max type="number" min="1" step="1" value="${A.esc(A.num(c.max, 10))}"></div>
-        <button class="btn btn-ghost btn-sm" type="button" data-remove aria-label="Remove criterion">&#215;</button>
-      </div>`).join('') : `<p class="small muted">No criteria yet. The student brief will say the criteria are still being finalised.</p>`;
-
-    rubricHost.querySelectorAll('[data-remove]').forEach((btn) => {
-      btn.addEventListener('click', function () {
-        criteria.splice(Number(btn.closest('[data-i]').getAttribute('data-i')), 1);
-        drawRubric(rubricHost, criteria);
-      });
-    });
-    rubricHost.querySelectorAll('[data-label]').forEach((input) => {
-      input.addEventListener('input', function () { criteria[Number(input.closest('[data-i]').getAttribute('data-i'))].label = input.value; });
-    });
-    rubricHost.querySelectorAll('[data-hint]').forEach((input) => {
-      input.addEventListener('input', function () { criteria[Number(input.closest('[data-i]').getAttribute('data-i'))].hint = input.value; });
-    });
-    rubricHost.querySelectorAll('[data-max]').forEach((input) => {
-      input.addEventListener('input', function () { criteria[Number(input.closest('[data-i]').getAttribute('data-i'))].max = input.value; });
-    });
   }
 
   function finaleForm() {
@@ -307,10 +264,8 @@
         instructions: scope.querySelector('#instructions').value.trim(),
         templateUrl: v('templateUrl'), templateNote: v('templateNote'),
         opensAt: d('opensAt'), closesAt: d('closesAt'), resultsAt: d('resultsAt'),
-        rubric: readForm.rubric(), useWeights: checked('useWeights'),
-        requireAllJudges: checked('requireAllJudges'),
         resultsReleasedToStudents: checked('resultsReleasedToStudents'), status: v('status')
-      }).then(() => 'Round 2 brief and rubric saved.');
+      }).then(() => 'Round 2 brief saved.');
     }
     return A.round2.saveFinaleConfig({
       city: v('city'), month: v('month'), date: d('date'), venue: v('venue'),

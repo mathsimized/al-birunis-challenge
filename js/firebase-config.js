@@ -30,9 +30,10 @@ ABC.server = firebase.firestore.FieldValue.serverTimestamp();
 
 /* Roles are stored on the competition user document, not on the identity
    provider, so this app never mutates MATHSIMIZED user records. */
+/* There is no judge role. Round 2 is judged off the platform, so the only
+   roles that exist are a student and the organiser. */
 ABC.ROLE = {
   STUDENT: 'student',
-  JUDGE: 'judge',
   ADMIN: 'admin'
 };
 

@@ -29,12 +29,9 @@
       closesAt: null,
       resultsAt: null,
       instructions: '',
-      /* Rubric: admin defines criteria. Empty by default — the brief
-         states the rubric is not finalised, so nothing is invented. */
-      rubric: [],
-      /* Weighted average when true, plain average when false. */
-      useWeights: false,
-      requireAllJudges: false,
+      /* Judging happens off the platform, so there is no rubric and no
+         weighting here. What is recorded is whether the organiser has
+         published the names, which is what students are allowed to see. */
       resultsReleasedToStudents: false,
       status: 'draft'
     };
@@ -63,8 +60,6 @@
   async function getRound2Config() {
     const snap = await round2Doc().get();
     const cfg = Object.assign(DEFAULT_ROUND2(), snap.exists ? snap.data() : {});
-    /* Cached so synchronous helpers such as rankSubmissions() can apply the
-       configured rubric and weighting rules. */
     A.round2CfgCache = cfg;
     return cfg;
   }
@@ -180,137 +175,28 @@
     await R.audit('round2_lock', { uid, locked: !!locked });
   }
 
-  /* ---------------- judging ----------------
-     Multiple judges per submission. Each judge records a score per rubric
-     criterion plus an overall comment. Aggregation honours the configured
-     weighting and can require all assigned judges to have scored. */
-  const judgementRef = (submissionUid, judgeUid) =>
-    db().collection(C.judgements).doc(submissionUid + '_' + judgeUid);
+  /* ---------------- no judging here ----------------
+     Round 2 submissions are judged off the platform. The organiser receives
+     the results by whatever route they use, then marks finalists in this
+     panel and publishes the names. There is deliberately no score, no rubric
+     and no per-judge record: storing numbers nobody reads would only risk
+     them leaking, and there is no way to enforce a marking scheme from a
+     browser anyway. */
 
-  /* A judgement is keyed by the judge's Firebase user id, never by the judge
-     record id, so the rules can match it against request.auth.uid. The judge
-     record carries that id in authUid once the judge has signed in. */
-  const judgeKey = (judge) => (judge && judge.authUid) || (judge && judge.id) || '';
-
-  async function getJudgements(submissionUid, judgeUids) {
-    const ids = judgeUids || (await listJudges()).map(judgeKey);
-    if (!ids.length) return [];
-    const snaps = await Promise.all(ids.map((id) => judgementRef(submissionUid, id).get()));
-    return snaps
-      .filter((s) => s.exists)
-      .map((s) => Object.assign({ id: s.id }, s.data()));
-  }
-
-  function onJudgementsForJudge(judgeUid, cb) {
-    return db().collection(C.judgements)
-      .where('judgeUid', '==', judgeUid)
-      .onSnapshot((s) => cb(s.docs.map((d) => Object.assign({ id: d.id }, d.data()))), () => cb([]));
-  }
-
-  async function saveJudgement(submissionUid, judgeUid, data) {
-    await judgementRef(submissionUid, judgeUid).set(Object.assign({
-      submissionUid,
-      judgeUid,
-      updatedAt: A.server
-    }, data), { merge: true });
-    return getAggregatedScore(submissionUid);
-  }
-
-  async function deleteJudgement(submissionUid, judgeUid) {
-    await judgementRef(submissionUid, judgeUid).delete();
-  }
-
-  function judgeTotal(judgement, rubric) {
-    if (!judgement) return null;
-    const criteria = (judgement.criteria || {});
-    if (rubric && rubric.length) {
-      return rubric.reduce((sum, c) => {
-        const raw = A.num(criteria[c.id], NaN);
-        if (!isFinite(raw)) return NaN;
-        const max = A.num(c.max, 10) || 10;
-        return sum + (raw / max) * 100;
-      }, NaN);
-    }
-    const overall = A.num(judgement.overall, NaN);
-    return isFinite(overall) ? overall : NaN;
-  }
-
-  /* Aggregate judge scores into a single figure for ranking. */
-  function aggregate(cfg, judgements) {
-    const rubric = cfg.rubric || [];
-    const totals = [];
-    let incomplete = 0;
-    judgements.forEach((j) => {
-      const t = judgeTotal(j, rubric);
-      if (t === null || isNaN(t)) { incomplete += 1; return; }
-      totals.push(t);
-    });
-    if (!totals.length) return { finalScore: null, judgeCount: 0, incomplete, complete: false };
-    const avg = totals.reduce((a, b) => a + b, 0) / totals.length;
-    const final = cfg.useWeights ? weightedAverage(judgementWeights(judgements, rubric), totals) : avg;
-    return {
-      finalScore: Math.round(final * 100) / 100,
-      judgeCount: totals.length,
-      incomplete,
-      complete: !cfg.requireAllJudges || incomplete === 0
-    };
-  }
-
-  /* When weighted, each judge's weight is derived from the sum of the
-     rubric maxima they scored — documented behaviour, admin-adjustable
-     via cfg.judgeWeights when present. */
-  function judgementWeights(judgements, rubric) {
-    return judgements.map((j) => {
-      if (j.weight !== undefined && j.weight !== null) return A.num(j.weight, 1);
-      if (!rubric.length) return 1;
-      const c = j.criteria || {};
-      return rubric.reduce((s, cr) => s + A.num(cr.max, 10), 0) || 1;
+  /* Submission order for the panel: by category, then by when it arrived. */
+  function listByArrival(submissions) {
+    return submissions.slice().sort((a, b) => {
+      if (a.category !== b.category) return String(a.category).localeCompare(String(b.category));
+      return toMillis(a.submittedAt) - toMillis(b.submittedAt);
     });
   }
 
-  function weightedAverage(weights, values) {
-    let wsum = 0, vsum = 0;
-    weights.forEach((w, i) => { if (!isNaN(values[i])) { wsum += w; vsum += w * values[i]; } });
-    return wsum ? vsum / wsum : 0;
-  }
-
-  /* Rank Round 2 submissions within a category. */
-  /* Aggregate one submission across its judges using the configured rubric. */
-  async function getAggregatedScore(submissionUid, judgeUids, cfg) {
-    const config = cfg || await getRound2Config();
-    const judgements = await getJudgements(submissionUid, judgeUids);
-    const agg = aggregate(config, judgements);
-    return Object.assign({ submissionUid, judgements }, agg);
-  }
-
-  function rankSubmissions(submissions, judgementsBySub, cfg) {
-    const config = cfg || A.round2CfgCache || { rubric: [], useWeights: false };
-    const rows = submissions.map((s) => {
-      const agg = aggregate(config, judgementsBySub[s.id] || []);
-      return Object.assign({}, s, {
-        finalScore: agg.finalScore,
-        judgeCount: agg.judgeCount,
-        judgingComplete: agg.complete
-      });
-    });
-    const ranked = A.sortBy(rows, (r) => (r.finalScore === null ? -1 : r.finalScore), 'desc');
-    let rank = 0, prev = null;
-    ranked.forEach((r) => {
-      if (r.finalScore === null) { r.rank = null; return; }
-      if (prev === null || r.finalScore !== prev) { rank += 1; prev = r.finalScore; }
-      r.rank = rank;
-    });
-    return ranked;
-  }
-
-  async function listAllJudgements() {
-    const snap = await db().collection(C.judgements).get();
-    const out = {};
-    snap.docs.forEach((d) => {
-      const data = d.data();
-      (out[data.submissionUid] = out[data.submissionUid] || []).push(Object.assign({ id: d.id }, data));
-    });
-    return out;
+  function toMillis(value) {
+    if (!value) return 0;
+    if (typeof value === 'number') return value;
+    if (typeof value.toMillis === 'function') return value.toMillis();
+    const t = new Date(value).getTime();
+    return isNaN(t) ? 0 : t;
   }
 
   /* ---------------- finalists ---------------- */
@@ -354,25 +240,23 @@
     await finalistRef(uid).set({ released: !!released, releasedAt: released ? A.server : null, updatedAt: A.server }, { merge: true });
   }
 
-  /* Bulk-confirm the top N of a ranked list — still requires an explicit
-     admin action and never publishes automatically. */
-  async function confirmTopN(category, n, rows, judgementsBySub, config) {
-    const cfg = config || await getRound2Config();
-    const ranked = rankSubmissions(rows, judgementsBySub, cfg);
-    const top = ranked.filter((r) => r.rank && r.rank <= n);
-    for (const r of top) {
+  /* Confirm a named set of submissions as finalists. The organiser picks them
+     from the results they were given off-platform, so there is no ranking to
+     compute here and nothing is confirmed automatically. */
+  async function confirmSelected(submissions, category) {
+    const done = [];
+    for (const r of submissions) {
       await confirmFinalist(r.id, {
         name: r.studentName,
         school: r.school,
         city: r.city,
         category: r.category,
-        rank: r.rank,
-        finalScore: r.finalScore,
         source: 'round2'
       });
+      done.push(r.id);
     }
-    await R.audit('finalists_confirm_top', { category, n, count: top.length });
-    return top;
+    await R.audit('finalists_confirm_selected', { category, count: done.length });
+    return done;
   }
 
   /* ---------------- grand finale results ---------------- */
@@ -391,10 +275,8 @@
     getRound2Config, onRound2Config, saveRound2Config,
     getFinaleConfig, onFinaleConfig, saveFinaleConfig,
     validateDriveUrl, getSubmission, onSubmission, submitRound2, listSubmissions,
-    reopenSubmission, lockSubmission,
-    getJudgements, onJudgementsForJudge, saveJudgement, deleteJudgement,
-    judgeTotal, judgeKey, aggregate, getAggregatedScore, rankSubmissions, listAllJudgements,
-    isFinalist, onFinalist, listFinalists, confirmFinalist, removeFinalist,
-    setFinalistReleased, confirmTopN, saveFinalistResult, AWARDS
+    reopenSubmission, lockSubmission, listByArrival,
+    isFinalist, onFinalist, listFinalists, confirmFinalist, confirmSelected, removeFinalist,
+    setFinalistReleased, saveFinalistResult, AWARDS
   };
 })(window);

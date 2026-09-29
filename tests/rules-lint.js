@@ -38,17 +38,42 @@ const STORAGE_GONE = !fs.existsSync(path.join(ROOT, 'storage.rules'));
     : fail(name + ': parentheses balance');
 });
 
+/* The live MATHSIMIZED site's own rules, one line each. This file replaces the
+   project's entire ruleset, so if one of these disappears the existing website
+   breaks. They are asserted here on every run. */
+const MATHSIMIZED_REQUIRED = [
+  ['users are publicly readable (the username check queries this)', /match \/users\/\{userId\} \{\s*allow read: if true;/],
+  ['users are writable by any signed-in user', /match \/users\/\{userId\} \{[\s\S]{0,120}?allow write: if request\.auth != null;/],
+  ['the admin catch-all', /match \/\{document=\*\*\} \{\s*allow read, write: if isMathsimizedAdmin\(\);/],
+  ['games', /match \/games\//],
+  ['news', /match \/news\//],
+  ['lectures', /match \/lectures\//],
+  ['notes', /match \/notes\//],
+  ['leaderboard', /match \/leaderboard\//],
+  ['scores', /match \/scores\//],
+  ['chatRooms', /match \/chatRooms\//],
+  ['the contact form can be posted to', /match \/contact\//],
+  ['presence', /match \/presence\//],
+  ['password_resets', /match \/password_resets\//],
+  ['competition_participants', /match \/competition_participants\//]
+];
+
 /* ---------- every collection the code touches has a rule ---------- */
 const source = [];
+const files = [];
 (function walk(dir) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach((e) => {
     if (e.name === 'node_modules' || e.name === '.git') return;
     const full = path.join(dir, e.name);
     if (e.isDirectory()) walk(full);
-    else if (/\.(js|html)$/.test(e.name)) source.push(fs.readFileSync(full, 'utf8'));
+    else if (/\.(js|html)$/.test(e.name)) { source.push(fs.readFileSync(full, 'utf8')); files.push(full); }
   });
 })(ROOT);
 const code = source.join('\n');
+/* The test files name the things they forbid, so any check about the app's own
+   files reads this instead of the full corpus. */
+const appCode = files.filter((f) => !f.startsWith(path.join(ROOT, 'tests') + path.sep))
+  .map((f) => fs.readFileSync(f, 'utf8')).join('\n');
 
 const declared = {};
 const codeRe = /^\s{4}([a-zA-Z][a-zA-Z0-9]*):\s*'([a-z0-9_]+)'/gm;
@@ -76,6 +101,13 @@ while ((m = ruleRe.exec(rules))) ruled.add(m[1]);
 ruled.delete('databases');
 ruled.add('users');
 
+/* The MATHSIMIZED block is copied in from the live site's own rules, so those
+   collections are ruled for on purpose: this file replaces the project's whole
+   ruleset, and dropping them would break the existing website. */
+const MATHSIMIZED = new Set(['games', 'news', 'lectures', 'notes', 'leaderboard',
+  'scores', 'chatRooms', 'contact', 'presence', 'password_resets',
+  'competition_participants', 'test_collection', 'users']);
+
 const unruled = [...used].filter((c) => c && !ruled.has(c));
 if (unruled.length) {
   fail('every collection used in code has a rule (a missing one silently falls to the deny-all catch-all)',
@@ -84,7 +116,7 @@ if (unruled.length) {
   pass('every collection used in code has a rule (' + used.size + ' collections)');
 }
 
-const unused = [...ruled].filter((c) => !used.has(c));
+const unused = [...ruled].filter((c) => !used.has(c) && !MATHSIMIZED.has(c));
 if (unused.length) {
   fail('no orphaned rules for collections the code no longer uses', unused.join(', '));
 } else {
@@ -106,7 +138,10 @@ while ((m = callRe.exec(rulesNoComments))) called.add(m[1]);
    or a Firestore built-in, and is not the linter's business. */
 const methods = new Set([
   'diff', 'affectedKeys', 'keys', 'hasAll', 'hasAny', 'hasOnly', 'size', 'matches',
-  'get', 'exists', 'request', 'resource'
+  'get', 'exists', 'request', 'resource',
+  /* String and List methods that Firestore provides on rule values. */
+  'startsWith', 'endsWith', 'lower', 'upper', 'replace', 'contains',
+  'toSet', 'removeAll', 'hasAny', 'isEmpty', 'join'
 ]);
 const unknown = [...called].filter((c) =>
   !defined.has(c) && !methods.has(c) && !builtin.has(c)
@@ -141,11 +176,63 @@ const attempts = rules.slice(rules.indexOf('match /abc_attempts/'), rules.indexO
   ['abc_ba: admin only, both directions', /match \/abc_ba\/\{code\} \{\s*allow read, write: if isAdmin\(\);/],
   ['abc_public_ba: public only once published', /match \/abc_public_ba\/\{doc\} \{\s*allow read: if resource\.data\.published == true;/],
   ['abc_certificates: a student reads only their own', /match \/abc_certificates[\s\S]*?isSelf\(resource\.data\.uid\)/],
-  ['abc_round2_judgements: a judge sees only their own', /resource\.data\.judgeUid == request\.auth\.uid/],
-  ['abc_users: the shared profile is never written here', /match \/users\/\{uid\} \{\s*allow read: if isSelf\(uid\);/]
+  ['abc_round2_submissions: only the student and the organiser', /match \/abc_round2_submissions\/\{uid\} \{\s*allow read: if isSelf\(uid\) \|\| isAdmin\(\);/]
 ].forEach(([label, re]) => {
   if (re.test(rules)) pass(label);
   else fail(label);
+});
+
+/* Judging is done off the platform. Nothing may bring a judge back: no role,
+   no collection, no rules, no portal. */
+[
+  ['no judge role in the config', /ROLE\.JUDGE|['"]judge['"]\s*:\s*/],
+  ['no judge collection in the rules', /abc_judges|abc_round2_judgements/],
+  ['no isJudge helper in the rules', /function isJudge\(/],
+  ['no judge files', /js\/judge\.js|js\/pages\/judge\//],
+  ['no judge route', /JUDGE_ROUTES|isJudgeRoute/]
+].forEach(([label, re]) => {
+  const haystack = [
+    rules,
+    fs.readFileSync(path.join(ROOT, 'js/firebase-config.js'), 'utf8'),
+    fs.readFileSync(path.join(ROOT, 'js/session.js'), 'utf8')
+  ].join('\n') + appCode;
+  if (re.test(haystack)) fail('no judging on the platform: ' + label, 'found: ' + re);
+  else pass('no judging on the platform: ' + label);
+});
+
+if (fs.existsSync(path.join(ROOT, 'judge')) || fs.existsSync(path.join(ROOT, 'js/pages/judge'))
+    || fs.existsSync(path.join(ROOT, 'js/judge.js'))) {
+  fail('no judging on the platform: the judge area is deleted');
+} else {
+  pass('no judging on the platform: the judge area is deleted');
+}
+
+/* The organiser must be able to claim admin, or the panel is unreachable. */
+[
+  ['the organiser email is recognised', /function isOrganiser\(\)/],
+  ['the organiser may create an admin record', /isOrganiser\(\)\s*\?\s*request\.resource\.data\.role == 'admin'/],
+  ['the organiser may promote their own record', /isOrganiser\(\)\s*&&\s*request\.resource\.data\.role == 'admin'/],
+  ['a student still cannot claim admin', /:\s*request\.resource\.data\.role == 'student'/]
+].forEach(([label, re]) => {
+  if (re.test(rules)) pass('admin bootstrap: ' + label);
+  else fail('admin bootstrap: ' + label);
+});
+
+/* This file replaces the whole project's ruleset, so everything the existing
+   MATHSIMIZED site depends on has to survive in it. */
+MATHSIMIZED_REQUIRED.forEach(([label, re]) => {
+  if (re.test(rules)) pass('MATHSIMIZED preserved: ' + label);
+  else fail('MATHSIMIZED preserved: ' + label, 'this rule is missing from firestore.rules');
+});
+
+/* The organiser was locked out of their own panel because the rules made
+   creating an admin record impossible. These assert it cannot recur. */
+[
+  ['a student can still only create a student record', /allow create: if isSelf\(uid\)[\s\S]{0,200}?request\.resource\.data\.role == 'admin'[\s\S]{0,200}?:\s*request\.resource\.data\.role == 'student'/],
+  ['the username check still works: users stay publicly readable', /match \/users\/\{userId\} \{\s*allow read: if true;/]
+].forEach(([label, re]) => {
+  if (re.test(rules)) pass('organiser access: ' + label);
+  else fail('organiser access: ' + label);
 });
 
 /* Nothing may reintroduce a bucket or the Storage SDK. */

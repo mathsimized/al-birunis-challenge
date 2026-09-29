@@ -37,10 +37,6 @@
     'admin/certificates.html', 'admin/brand-ambassadors.html', 'admin/announcements.html',
     'admin/users.html'
   ];
-  /* The judging sheet is a separate, much smaller area, open to judges and
-     to administrators. */
-  const JUDGE_ROUTES = ['judge/index.html'];
-
   /* The path relative to the site root, so that route protection works when
      the app is served from a subdirectory as well as from the domain root. */
   function currentRoute() {
@@ -60,7 +56,6 @@
      treating one as the other would lock students out of the portal. */
   function isPortalRoute(route) { return !!route && PORTAL_ROUTES.indexOf(route) !== -1; }
   function isAdminRoute(route) { return !!route && ADMIN_ROUTES.indexOf(route) !== -1; }
-  function isJudgeRoute(route) { return !!route && JUDGE_ROUTES.indexOf(route) !== -1; }
 
   function home() { return A.rootPath('student/dashboard.html'); }
   function login() { return A.rootPath('login.html?next=' + encodeURIComponent(global.location.pathname)) }
@@ -96,9 +91,15 @@
     return A.auth.currentUser;
   }
 
-  async function signUp(email, password, name) {
+  /* A username, not a full name. This is the same account the student uses
+     on MATHSIMIZED, so the full name belongs in the competition registration
+     form, where the organiser needs it for certificates — not here, where
+     someone might type a nickname. */
+  async function signUp(email, password, username) {
     const cred = await A.auth.createUserWithEmailAndPassword(email, password);
-    if (name) await cred.user.updateProfile({ displayName: name });
+    if (username) {
+      try { await cred.user.updateProfile({ displayName: username }); } catch (e) { /* not fatal */ }
+    }
     return cred.user;
   }
 
@@ -119,7 +120,7 @@
     const user = A.user;
 
     if (!user) {
-      if (isPortalRoute(route) || isAdminRoute(route) || isJudgeRoute(route) || opts.requireAuth) {
+      if (isPortalRoute(route) || isAdminRoute(route) || opts.requireAuth) {
         A.redirect(login());
         return null;
       }
@@ -132,19 +133,6 @@
       const rec = await R.ensureUser(user);
       if (!R.isAdmin(rec)) {
         A.ui.toast('You do not have access to the administration panel.', 'error');
-        setTimeout(() => A.redirect(home()), 1200);
-        return null;
-      }
-      SESSION.record = rec;
-      SESSION.ready = true;
-      if (opts.onReady) opts.onReady(SESSION);
-      return SESSION;
-    }
-
-    if (isJudgeRoute(route)) {
-      const rec = await R.ensureUser(user);
-      if (!R.isAdmin(rec) && !R.isJudge(rec)) {
-        A.ui.toast('You do not have access to the judging panel.', 'error');
         setTimeout(() => A.redirect(home()), 1200);
         return null;
       }

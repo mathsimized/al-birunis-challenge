@@ -2,17 +2,35 @@ rules_version = '2';
 
 /* Al-Biruni's Challenge 2026 — Firestore rules.
  *
- * Security model
+ * ############################################################################
+ * # THIS FILE IS THE WHOLE PROJECT'S RULES, NOT JUST OURS.                #
+ * #                                                                        #
+ * # Firebase has exactly one security ruleset per project, and this        #
+ * # competition shares the MATHSIMIZED project so that a student keeps    #
+ * # one login. Deploying this file therefore REPLACES the rules that run   #
+ * # the existing MATHSIMIZED site. Everything that site needs is carried   #
+ * # over verbatim below, under "MATHSIMIZED — DO NOT REMOVE".             #
+ * #                                                                        #
+ * # If a rule for a MATHSIMIZED collection is ever dropped from this file, #
+ * # that part of the live site breaks: games, news, lectures, notes, the  #
+ * # leaderboard, scores, chat, the contact form, presence, password        #
+ * # resets, or the public read of `users` that the username-uniqueness     #
+ * # check depends on.                                                      #
+ * ############################################################################
+ *
+ * Security model for the competition
  *   public   : published configuration, published announcements, public
  *              result snapshots. Nothing else.
  *   student  : their own registration, attempt, result, Round 2 submission,
- *              certificates and Brand Ambassador record. Never the question
- *              bank, never the answer keys, never anybody else's work.
- *   judge    : read submissions, write only their own judgements.
+ *              certificates. Never the question bank, never the answer keys,
+ *              never anybody else's work.
  *   admin    : the competition data. Roles live in abc_users.
  *
+ * Judging is not done on this platform, so there is no judge role. The
+ * organiser marks finalists and publishes their names.
+ *
  * The question bank and answer keys are administrator-only because the paper
- * is chosen and scored by Cloud Functions.
+ * is scored by the organiser's own session, with no backend to hide behind.
  */
 
 service cloud.firestore {
@@ -34,21 +52,93 @@ service cloud.firestore {
       return role() == 'admin';
     }
 
-    function isJudge() {
-      return role() == 'judge';
-    }
 
     function isSelf(uid) {
       return signedIn() && request.auth.uid == uid;
+    }
+
+    /* The organiser signs in with this address, and the admin role is granted
+       from the verified token rather than from a document that only an
+       existing admin could create. Without this the organiser can never
+       bootstrap their own admin record, because creating one would need
+       admin rights in the first place. */
+    function isOrganiser() {
+      return signedIn()
+        && request.auth.token.email == 'mathsimized@gmail.com';
     }
 
     function isTimestamp(value) {
       return value is timestamp;
     }
 
-    /* ---------------- shared MATHSIMIZED profile (read-only) ---------------- */
-    match /users/{uid} {
-      allow read: if isSelf(uid);
+    /* ######################################################################
+     * MATHSIMIZED — DO NOT REMOVE
+     *
+     * Copied verbatim from the live site's own firestore.rules. These are
+     * the collections the existing website depends on. They are listed
+     * before the competition rules on purpose: Firestore allows access if
+     * ANY matching rule allows it, so the existing site keeps working
+     * exactly as before.
+     * ###################################################################### */
+
+    function isMathsimizedAdmin() {
+      return request.auth != null
+        && request.auth.token.email == "mathsimized@gmail.com";
+    }
+
+    match /{document=**} {
+      allow read, write: if isMathsimizedAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /games/{document=**} {
+      allow read: if true;
+      allow write: if isMathsimizedAdmin();
+    }
+    match /news/{document=**} {
+      allow read: if true;
+      allow write: if isMathsimizedAdmin();
+    }
+    match /lectures/{document=**} {
+      allow read: if true;
+      allow write: if isMathsimizedAdmin();
+    }
+    match /notes/{document=**} {
+      allow read: if true;
+      allow write: if isMathsimizedAdmin();
+    }
+    match /leaderboard/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.uid == docId;
+    }
+    match /scores/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && docId.startsWith(request.auth.uid + '_');
+    }
+    match /chatRooms/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /contact/{document} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+    match /presence/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /password_resets/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /competition_participants/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /test_collection/{document=**} {
+      allow read, write: if false;
     }
 
     /* ---------------- configuration ---------------- */
@@ -64,12 +154,20 @@ service cloud.firestore {
          student role. `resource` does not exist on create, so the key set is
          checked instead. */
       allow create: if isSelf(uid)
-                    && request.resource.data.role == 'student'
+                    && (isOrganiser()
+                          ? request.resource.data.role == 'admin'
+                          : request.resource.data.role == 'student')
                     && request.resource.data.keys().hasOnly(
-                         ['uid', 'role', 'email', 'displayName', 'photoURL',
+                         ['uid', 'role', 'email', 'displayName', 'username',
                           'createdAt', 'updatedAt', 'lastSeenAt']);
+      /* A student can keep their own role but never change it. The organiser
+         may promote their own record to admin, and nobody can reach a role
+         other than admin through this path. */
       allow update: if isAdmin()
-                    || (isSelf(uid) && request.resource.data.role == resource.data.role);
+                    || (isSelf(uid)
+                        && (request.resource.data.role == resource.data.role
+                            || (isOrganiser()
+                                && request.resource.data.role == 'admin')));
       allow delete: if isAdmin();
     }
 
@@ -174,20 +272,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    /* ---------------- Round 2 ---------------- */
+    /* ---------------- Round 2 ----------------
+       Students submit a link to their own work. Judging happens off the
+       platform, so no one but the student and the organiser ever reads it. */
     match /abc_round2_submissions/{uid} {
-      allow read: if isSelf(uid) || isAdmin() || isJudge();
+      allow read: if isSelf(uid) || isAdmin();
       allow create: if isSelf(uid);
-      allow update: if isSelf(uid) || isAdmin() || isJudge();
+      allow update: if isSelf(uid) || isAdmin();
       allow delete: if isSelf(uid) || isAdmin();
-    }
-
-    match /abc_round2_judgements/{judgementId} {
-      /* A judge sees only their own scores; an administrator sees all. */
-      allow read: if isAdmin() || (isJudge() && resource.data.judgeUid == request.auth.uid);
-      allow create: if isJudge() && request.resource.data.judgeUid == request.auth.uid;
-      allow update: if isAdmin() || (isJudge() && resource.data.judgeUid == request.auth.uid);
-      allow delete: if isAdmin() || (isJudge() && resource.data.judgeUid == request.auth.uid);
     }
 
     match /abc_finalists/{uid} {
@@ -196,11 +288,6 @@ service cloud.firestore {
     }
 
     /* ---------------- judges ---------------- */
-    match /abc_judges/{judgeId} {
-      allow read: if isAdmin() || isJudge();
-      allow write: if isAdmin();
-    }
-
     /* ---------------- certificates ---------------- */
     match /abc_certificates/{certificateId} {
       allow read: if isSelf(resource.data.uid) || isAdmin();

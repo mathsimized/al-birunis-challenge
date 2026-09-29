@@ -1,63 +1,66 @@
-/* Round 2 admin — submissions, the judging panel, and finalist selection.
-   Each judge scores independently; the aggregate is computed from the
-   configured rubric and never shown to students until released. */
+/* Round 2 admin — submissions, and marking finalists.
+ *
+ * Judging is not done on this platform. The organiser is given the results
+ * separately, then ticks the students who qualified and publishes their names.
+ * So this page deliberately holds no scores and no rubric: there is nothing
+ * here for a score to leak out of, and a browser cannot enforce a marking
+ * scheme in the first place. */
 (function () {
   'use strict';
   const A = ABC;
   const host = document.querySelector('[data-host]');
 
-  let cfg = null, submissions = [], judges = [], judgements = {}, results = [], quotal = null, catCfg = null;
-  const state = { category: '', selected: null };
+  let cfg = null, submissions = [], finalists = [], catCfg = null;
+  const state = { category: '', selected: new Set() };
 
   A.admin({
     active: 'admin/round2.html',
-    title: 'Round 2 — Submissions & Judging',
-    subtitle: 'Submissions, judging panel and ranking',
+    title: 'Round 2 — Submissions & finalists',
+    subtitle: 'Review submissions and mark who reaches the Grand Finale',
     onReady: load
   });
 
   async function load() {
-    [cfg, catCfg, submissions, judges, results] = await Promise.all([
+    [cfg, catCfg, submissions, finalists] = await Promise.all([
       A.round2.getRound2Config(),
       A.repo.getConfig(),
       A.round2.listSubmissions({}),
-      A.repo.listJudges(),
       A.round2.listFinalists()
     ]);
-    judgements = await A.round2.listAllJudgements();
-    if (state.selected && !submissions.some((s) => s.uid === state.selected)) state.selected = null;
     render();
+  }
+
+  function isFinalist(uid) { return finalists.some((f) => f.id === uid); }
+
+  function quota() {
+    const q = catCfg && catCfg.round2QualifyPerCategory;
+    return (q === null || q === undefined || q === '') ? null : A.num(q);
   }
 
   function render() {
     const list = filtered();
-    const ranked = A.round2.rankSubmissions(list, judgements, cfg);
     const st = windowState();
+    const q = quota();
 
     host.innerHTML = `
       <div class="grid grid-4" style="gap:1rem">
         ${stat('Submissions', submissions.length, st.label)}
         ${stat('Locked', submissions.filter((s) => s.locked).length, 'Students cannot edit these')}
-        ${stat('Judges on the panel', judges.length, judges.length < 2 ? 'Add at least two judges' : 'Assigned by the organiser')}
-        ${stat('Finalists confirmed', results.length, 'Quota: ' + (catCfg.round2QualifyPerCategory === null || catCfg.round2QualifyPerCategory === undefined || catCfg.round2QualifyPerCategory === '' ? 'not set' : A.num(catCfg.round2QualifyPerCategory) + ' per category'))}
+        ${stat('Finalists marked', finalists.length, q === null ? 'Quota not set' : 'Quota: ' + q + ' per category')}
+        ${stat('Selected now', state.selected.size, 'Not yet saved')}
       </div>
 
-      <div class="callout" style="margin-top:1.5rem">
-        <strong>Rubric:</strong>
-        ${cfg.rubric && cfg.rubric.length
-          ? A.esc(cfg.rubric.map((c) => c.label).join(' · ')) + (cfg.useWeights ? ' — combined as a weighted average' : ' — averaged across judges')
-          : 'no criteria set yet, so judges score overall only. Add criteria in Settings before judging begins.'}
-        ${cfg.requireAllJudges ? ' A submission counts as complete only when every judge has scored.' : ''}
-      </div>
+      ${A.ui.alertBox('info', 'How finalists are chosen. ', 'Marking happens off this website. Read the submissions here, then tick everyone who qualified. Nothing is published until you publish the names on the Finalists page.')}
 
       <div class="panel" style="margin-top:1.5rem">
         <div class="panel-header">
-          <h2>Submissions &amp; ranking</h2>
+          <h2>Submissions</h2>
           <div class="flex-center">
+            <button class="btn btn-primary btn-sm" id="saveBtn" ${state.selected.size ? '' : 'disabled'}>Mark ${state.selected.size} as finalist${state.selected.size === 1 ? '' : 's'}</button>
             <button class="btn btn-outline btn-sm" id="lockAllBtn">Lock all</button>
             <button class="btn btn-outline btn-sm" id="unlockAllBtn">Unlock all</button>
             <button class="btn btn-outline btn-sm" id="exportBtn">Export</button>
-            <a class="btn btn-outline btn-sm" href="finalists.html">Finalist selection</a>
+            <a class="btn btn-outline btn-sm" href="finalists.html">Publish names</a>
           </div>
         </div>
         <div class="panel-body">
@@ -74,58 +77,65 @@
     host.querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { state.category = b.getAttribute('data-cat'); render(); }));
     host.querySelector('#lockAllBtn').addEventListener('click', function () { setAllLocks(true, this); });
     host.querySelector('#unlockAllBtn').addEventListener('click', function () { setAllLocks(false, this); });
+    host.querySelector('#saveBtn').addEventListener('click', function () { saveSelection(this); });
     host.querySelector('#exportBtn').addEventListener('click', () => {
-      A.exportCSV('al-birunis-round2-judging.csv', [
-        { key: 'rank', label: 'Rank' },
+      A.exportCSV('al-birunis-round2-submissions.csv', [
         { key: 'studentName', label: 'Student' },
         { key: 'category', label: 'Category', csv: (r) => A.repo.categoryLabel(r.category) },
+        { key: 'school', label: 'School' },
         { key: 'title', label: 'Title' },
-        { key: 'finalScore', label: 'Final score' },
-        { key: 'judgeCount', label: 'Judges scored' },
-        { key: 'judgingComplete', label: 'Complete', csv: (r) => (r.judgingComplete ? 'Yes' : 'No') },
+        { key: 'topic', label: 'Topic' },
+        { key: 'driveUrl', label: 'Submission link' },
+        { key: 'finalist', label: 'Marked finalist', csv: (r) => (isFinalist(r.uid) ? 'Yes' : 'No') },
         { key: 'submittedAt', label: 'Submitted', csv: (r) => A.fmtDateTime(r.submittedAt) }
-      ], ranked);
+      ], list);
     });
 
-    drawTable(ranked);
-    if (state.selected) drawDetail();
+    drawTable(list);
+    if (state.selected.size) drawDetail();
   }
 
   function filtered() {
-    return submissions.filter((s) => !state.category || s.category === state.category);
+    return A.round2.listByArrival(submissions.filter((s) => !state.category || s.category === state.category));
   }
 
-  function drawTable(ranked) {
+  function drawTable(list) {
     const el = document.querySelector('[data-table]');
     el.innerHTML = A.table([
-      { key: 'rank', label: 'Rank', className: 'rank-cell', render: (r) => A.esc(r.rank ? A.ordinal(r.rank) : '—') },
+      {
+        label: 'Finalist', className: 'num', render: (r) => (isFinalist(r.uid) || state.selected.has(r.uid)
+          ? A.statusBadge('approved')
+          : `<label class="checkline" style="margin:0"><input type="checkbox" data-pick="${A.esc(r.uid)}" ${state.selected.has(r.uid) ? 'checked' : ''}><span class="sr-only">Mark ${A.esc(r.studentName || '')} as a finalist</span></label>`)
+      },
       {
         key: 'studentName', label: 'Submission', render: (r) => `<strong>${A.esc(r.studentName || '—')}</strong>
           <div class="small muted">${A.esc(r.title || 'Untitled')}${r.topic ? ' &middot; ' + A.esc(r.topic) : ''}</div>`
       },
       { key: 'category', label: 'Category', render: (r) => A.esc(A.repo.categoryLabel(r.category)) },
-      { key: 'finalScore', label: 'Final score', className: 'num', render: (r) => (r.finalScore === null ? '—' : A.esc(r.finalScore)) },
-      {
-        key: 'judgeCount', label: 'Judged', render: (r) => `${A.esc(A.num(r.judgeCount))} / ${A.esc(A.num(judges.length))}
-          ${r.judgingComplete ? A.statusBadge('approved') : A.statusBadge('pending')}`
-      },
+      { key: 'school', label: 'School', render: (r) => A.esc(r.school || '—') },
       { key: 'locked', label: 'Editing', render: (r) => (r.locked ? A.statusBadge('locked') : A.statusBadge('in-progress')) },
       {
         label: 'Actions', render: (r) => `<div class="row-actions">
-          <button class="btn btn-outline btn-sm" data-open="${A.esc(r.uid)}">${state.selected === r.uid ? 'Close' : 'Judge'}</button>
+          <button class="btn btn-outline btn-sm" data-open="${A.esc(r.uid)}">${state.selected.has(r.uid) ? 'Close' : 'Open'}</button>
           <button class="btn btn-ghost btn-sm" data-toggle="${A.esc(r.uid)}">${r.locked ? 'Unlock' : 'Lock'}</button>
         </div>`
       }
-    ], ranked, {
-      rowClass: (r) => (r.rank && r.rank <= 3 ? 'rank-' + r.rank : ''),
+    ], list, {
       emptyTitle: 'No submissions yet',
       emptyMessage: 'Qualified students submit a Drive link from the student portal.'
     });
 
+    el.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('change', function () {
+      const uid = this.getAttribute('data-pick');
+      if (this.checked) state.selected.add(uid); else state.selected.delete(uid);
+      render();
+    }));
     el.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', function () {
-      state.selected = state.selected === this.getAttribute('data-open') ? null : this.getAttribute('data-open');
-      drawTable(ranked);
-      if (state.selected) drawDetail(); else document.querySelector('[data-detail]').innerHTML = '';
+      const uid = this.getAttribute('data-open');
+      if (state.selected.has(uid) && state.selected.size === 1) { state.selected.clear(); render(); return; }
+      state.selected.clear();
+      state.selected.add(uid);
+      render();
     }));
     el.querySelectorAll('[data-toggle]').forEach((b) => b.addEventListener('click', function () {
       const s = submissions.find((x) => x.uid === this.getAttribute('data-toggle'));
@@ -135,12 +145,9 @@
   }
 
   function drawDetail() {
-    const s = submissions.find((x) => x.uid === state.selected);
+    const uid = [...state.selected][0];
+    const s = submissions.find((x) => x.uid === uid);
     if (!s) { document.querySelector('[data-detail]').innerHTML = ''; return; }
-    const mine = judgements[s.uid] || [];
-    const agg = A.round2.aggregate(cfg, mine);
-    const mineByJudge = {};
-    mine.forEach((j) => { mineByJudge[j.judgeUid] = j; });
 
     const detail = document.querySelector('[data-detail]');
     detail.innerHTML = `
@@ -148,91 +155,38 @@
         <div class="panel-header">
           <h2>${A.esc(s.studentName || 'Submission')} — ${A.esc(s.title || '')}</h2>
           <div class="flex-center">
-            ${agg.finalScore !== null ? `<span class="badge badge-burgundy">Aggregate ${A.esc(agg.finalScore)} / 100</span>` : A.statusBadge('pending')}
-            <a class="btn btn-outline btn-sm" href="${A.esc(s.driveUrl)}" target="_blank" rel="noopener">Open Drive link &#8599;</a>
+            ${s.driveUrl ? `<a class="btn btn-outline btn-sm" href="${A.esc(s.driveUrl)}" target="_blank" rel="noopener">Open Drive link &#8599;</a>` : ''}
+            <button class="btn btn-ghost btn-sm" data-close>Close</button>
           </div>
         </div>
         <div class="panel-body">
           <dl class="kv">
             <dt>Category</dt><dd>${A.esc(A.repo.categoryLabel(s.category))}</dd>
             <dt>School</dt><dd>${A.esc(s.school || '—')}</dd>
+            <dt>City</dt><dd>${A.esc(s.city || '—')}</dd>
             <dt>Topic</dt><dd>${A.esc(s.topic || '—')}</dd>
             <dt>Submitted</dt><dd>${A.fmtDateTime(s.submittedAt)}${A.num(s.resubmitCount) > 0 ? ' &middot; updated ' + A.fmtDateTime(s.resubmittedAt) : ''}</dd>
             <dt>Notes</dt><dd>${A.esc(s.notes || '—')}</dd>
-            <dt>Judged by</dt><dd>${mine.length} of ${judges.length} judges</dd>
           </dl>
-
-          <h3 style="margin-top:1.5rem">Judge scores</h3>
-          ${judges.length ? A.table([
-            { key: 'name', label: 'Judge', render: (j) => `<strong>${A.esc(j.name || '—')}</strong>${j.focus ? `<div class="small muted">${A.esc(j.focus)}</div>` : ''}` },
-            { key: 'scored', label: 'Scored', render: (j) => (mineByJudge[j.id] ? A.statusBadge('approved') : A.statusBadge('pending')) },
-            { key: 'total', label: 'Total', className: 'num', render: (j) => { const t = A.round2.judgeTotal(mineByJudge[j.id], cfg.rubric); return t === null || isNaN(t) ? '—' : A.esc(t); } },
-            { key: 'updatedAt', label: 'Updated', render: (j) => (mineByJudge[j.id] ? A.fmtDateTime(mineByJudge[j.id].updatedAt) : '—') },
-            { label: '', render: (j) => `<button class="btn btn-ghost btn-sm" data-score="${A.esc(j.id)}">${mineByJudge[j.id] ? 'Edit' : 'Score'}</button>` }
-          ], judges) : A.ui.emptyState('&#9675;', 'No judges yet', 'Add judges in Users & Access before judging begins.')}
-
-          <details style="margin-top:1.25rem">
-            <summary class="small muted" style="cursor:pointer">Full judge breakdown</summary>
-            <div data-breakdown style="margin-top:.75rem"></div>
-          </details>
         </div>
       </div>`;
-
-    detail.querySelectorAll('[data-score]').forEach((b) => b.addEventListener('click', function () {
-      const judgeId = this.getAttribute('data-score');
-      openScorer(s, judgeId, mineByJudge[judgeId]);
-    }));
-
-    const bd = detail.querySelector('[data-breakdown]');
-    if (mine.length) {
-      bd.innerHTML = mine.map((j) => {
-        const judge = judges.find((x) => x.id === j.judgeUid) || {};
-        return `<div style="margin-bottom:1rem">
-          <strong>${A.esc(judge.name || j.judgeUid)}</strong>
-          ${j.comment ? `<div class="small muted" style="margin:.25rem 0">${A.esc(j.comment)}</div>` : ''}
-          <dl class="kv">${Object.keys(j.criteria || {}).map((c) => {
-            const crit = (cfg.rubric || []).find((r) => r.id === c);
-            return `<dt>${A.esc(crit ? crit.label : c)}</dt><dd>${A.esc(A.num(j.criteria[c]))}${crit ? ' / ' + A.esc(A.num(crit.max, 10)) : ''}</dd>`;
-          }).join('')}</dl>
-        </div>`;
-      }).join('');
-    } else {
-      bd.innerHTML = '<p class="small muted">No scores recorded yet.</p>';
-    }
+    detail.querySelector('[data-close]').addEventListener('click', function () { state.selected.clear(); render(); });
   }
 
-  /* ---------------- scorer modal ---------------- */
-  function openScorer(submission, judgeId, existing) {
-    const judge = judges.find((j) => j.id === judgeId) || {};
-    /* Judgements are keyed by the judge's Firebase user id where known, so
-       the judge's own portal and this panel write the same document. */
-    const judgeUid = A.round2.judgeKey(judge);
-    const criteria = cfg.rubric || [];
-    const current = (existing && existing.criteria) || {};
-
-    const fields = criteria.map((c) => ({
-      name: 'c_' + c.id,
-      label: c.label + (c.hint ? ' — ' + c.hint : ''),
-      type: 'number',
-      value: current[c.id] === undefined ? '' : current[c.id]
-    }));
-    if (!criteria.length) {
-      fields.push({ name: 'overall', label: 'Overall score (0–100)', type: 'number', value: existing ? existing.overall || '' : '' });
-    }
-    fields.push({ name: 'comment', label: 'Private judge comment', type: 'textarea', span: true, rows: 3, value: (existing && existing.comment) || '', hint: 'Only administrators see this. It is never shown to students.' });
-
-    A.ui.formModal('Score — ' + (judge.name || 'judge'), fields, { wide: true }).then(function (v) {
-      if (!v) return;
-      const payload = { judgeName: judge.name || '', comment: v.comment || '' };
-      if (criteria.length) {
-        payload.criteria = {};
-        criteria.forEach((c) => { payload.criteria[c.id] = A.num(v['c_' + c.id], 0); });
-      } else {
-        payload.overall = A.num(v.overall, 0);
-      }
-      return A.round2.saveJudgement(submission.uid, judgeUid, payload)
-        .then(function () { A.ui.toast('Score saved.', 'ok'); load(); });
-    }).catch(function (err) { A.ui.toast(err.message || 'Could not save the score.', 'error'); });
+  function saveSelection(btn) {
+    const picks = [...state.selected];
+    const rows = submissions.filter((s) => picks.indexOf(s.uid) !== -1);
+    if (!rows.length) return;
+    A.confirmRun({
+      title: 'Mark ' + rows.length + ' ' + A.plural(rows.length, 'student') + ' as finalist' + (rows.length === 1 ? '?' : 's?'),
+      message: 'These names go to the Grand Finale list. You still have to publish them on the Finalists page before students can see them.\n\n'
+        + rows.map((r) => '· ' + (r.studentName || '—') + ' — ' + A.repo.categoryLabel(r.category)).join('\n'),
+      confirmLabel: 'Mark as finalist', button: btn, busyLabel: 'Saving…',
+      run: function () { return A.round2.confirmSelected(rows, state.category); }
+    }).then(function (ok) {
+      if (ok) { state.selected.clear(); A.ui.toast('Finalists marked. Publish the names when you are ready.', 'ok'); }
+      return load();
+    }).catch(function () {});
   }
 
   function setAllLocks(locked, btn) {

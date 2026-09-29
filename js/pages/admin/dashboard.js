@@ -13,13 +13,13 @@
   });
 
   async function render() {
-    const [cfg, quiz, r2cfg, finale, regs, results, attempts, submissions, finals, certs, bas, anns, judges, users] =
+    const [cfg, quiz, r2cfg, finale, regs, results, attempts, submissions, finals, certs, bas, anns, users] =
       await Promise.all([
         A.repo.getConfig(), A.round1.getQuiz(), A.round2.getRound2Config(), A.round2.getFinaleConfig(),
         A.repo.listRegistrations(), A.round1.listResults(), A.round1.listAttempts(),
         A.round2.listSubmissions({}), A.round2.listFinalists(),
         A.repo.listCertificates(), A.repo.listBAs(), A.repo.listAnnouncements({ includeUnpublished: true }),
-        A.repo.listJudges(), A.repo.listUsers()
+        A.repo.listUsers()
       ]);
 
     const r1 = A.round1Availability(quiz, null);
@@ -27,7 +27,6 @@
       const list = regs.filter((r) => r.category === c.id);
       return { c, total: list.length, qualified: list.filter((r) => r.qualifiedForRound2).length };
     });
-    const pendingJudging = submissions.filter((s) => !s.locked || s.status !== 'judged');
     const unscored = attempts.filter((a) => a.status === 'submitted' && a.resultStatus !== 'scored');
     const unreleased = results.filter((r) => !r.releasedToStudent);
     const draftCerts = certs.filter((c) => !c.released);
@@ -57,7 +56,7 @@
               ${roundRow('Round 2 — Communication Challenge', A.rootPath('admin/round2.html'),
                 r2cfg.status === 'draft' ? ['badge-muted', 'Draft'] : (A.toDate(r2cfg.closesAt) && Date.now() > A.toDate(r2cfg.closesAt).getTime()) ? ['badge-muted', 'Closed'] : ['badge-ok', 'Submissions open'],
                 `${A.fmtDateTime(r2cfg.opensAt) || 'Opens: to be set'} – ${A.fmtDateTime(r2cfg.closesAt) || 'closes: to be set'}`,
-                `${submissions.length} submissions · ${judges.length} judges`)}
+                `${submissions.length} submissions · ${finals.length} finalists`)}
               ${roundRow('Grand Finale', A.rootPath('admin/grand-finale.html'),
                 finale.status === 'planning' ? ['badge-muted', 'Planning'] : ['badge-info', finale.status],
                 `${finale.city || 'Karachi'} · ${finale.month || 'November 2026'}`,
@@ -92,8 +91,8 @@
                 ${task(pendingBA.length, 'Brand Ambassador applications to review', 'admin/brand-ambassadors.html', 'Review applications')}
                 ${task(draftCerts.length, 'certificates drafted but not released', 'admin/certificates.html', 'Manage certificates')}
                 ${task(anns.filter((a) => a.published === false).length, 'unpublished announcements', 'admin/announcements.html', 'Publish notices')}
-                ${task(judges.length < 2, 'judges for Round 2', 'admin/users.html', 'Manage judges', judges.length < 2)}
-                ${task(pendingJudging.length, 'Round 2 submissions still in play', 'admin/round2.html', 'Open judging')}
+                ${task(submissions.length && !finals.length, 'Round 2 submissions waiting on you', 'admin/round2.html', 'Mark finalists')}
+                ${task(finals.length && !finals.some((f) => f.released), 'finalists not yet published', 'admin/finalists.html', 'Publish the names')}
                 ${!anns.length ? task(1, 'no announcements published yet', 'admin/announcements.html', 'Write the first notice', true) : ''}
               </div>
             </div>
@@ -115,7 +114,7 @@
               <dl class="kv">
                 <dt>Total accounts</dt><dd>${A.esc(A.num(users.length))}</dd>
                 <dt>Admins</dt><dd>${A.esc(A.num(users.filter((u) => u.role === A.ROLE.ADMIN).length))}</dd>
-                <dt>Judges</dt><dd>${A.esc(A.num(users.filter((u) => u.role === A.ROLE.JUDGE).length))}</dd>
+                <dt>Students</dt><dd>${A.esc(A.num(users.filter((u) => u.role === A.ROLE.STUDENT).length))}</dd>
               </dl>
             </div>
           </div>
