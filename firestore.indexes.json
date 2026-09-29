@@ -1,0 +1,19 @@
+{
+  "indexes": [
+    { "collectionGroup": "abc_questions", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "category", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_questions", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "category", "order": "ASCENDING" }, { "fieldPath": "difficulty", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_questions", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "category", "order": "ASCENDING" }, { "fieldPath": "difficulty", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_attempts", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "category", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_attempts", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "resultStatus", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_attempts", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "category", "order": "ASCENDING" }, { "fieldPath": "resultStatus", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_results", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "category", "order": "ASCENDING" }, { "fieldPath": "rank", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_round2_submissions", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "category", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_round2_judgements", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "judgeUid", "order": "ASCENDING" }, { "fieldPath": "submissionId", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_certificates", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "uid", "order": "ASCENDING" }, { "fieldPath": "released", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_certificates", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "type", "order": "ASCENDING" }, { "fieldPath": "released", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_registrations", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "category", "order": "ASCENDING" }, { "fieldPath": "qualifiedForRound2", "order": "ASCENDING" }] },
+    { "collectionGroup": "abc_ba", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "attributedCount", "order": "DESCENDING" }] },
+    { "collectionGroup": "abc_announcements", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "published", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" }] }
+  ],
+  "fieldOverrides": []
+}

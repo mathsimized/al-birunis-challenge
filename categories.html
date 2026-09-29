@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Categories — Al-Biruni's Challenge 2026</title>
+<meta name="description" content="Three competition categories: Prep, O Levels and A Levels.">
+<meta name="theme-color" content="#642B36">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div data-abc-header></div>
+
+<main id="main">
+  <section class="page-head">
+    <div class="shell">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Categories</span>
+      </nav>
+      <span class="eyebrow left">Choose your category</span>
+      <h1>Three categories</h1>
+      <p class="lead">
+        Each category is ranked separately and each awards its own Winner and Runner-up.
+        You register in one category and compete in that category throughout.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <div class="grid grid-3" data-category-cards></div>
+    </div>
+  </section>
+
+  <section class="section section-alt">
+    <div class="shell-narrow">
+      <div class="text-center" style="margin-bottom:2rem">
+        <span class="eyebrow">Choosing carefully</span>
+        <h2>Which category should I enter?</h2>
+      </div>
+      <div class="card">
+        <div class="qa-row">
+          <div>
+            <div class="qa-text"><strong>Can I change category later?</strong></div>
+            <div class="qa-meta"><span class="small muted">Changing a category after starting Round 1 would invalidate the attempt, so the category is fixed once your official attempt begins. Contact the organiser as early as possible if you chose the wrong one.</span></div>
+          </div>
+        </div>
+        <div class="qa-row">
+          <div>
+            <div class="qa-text"><strong>Do all categories compete together?</strong></div>
+            <div class="qa-meta"><span class="small muted">No. Each category has its own leaderboard, its own qualifying places and its own Winner and Runner-up. Thirty finalists reach the Grand Finale overall.</span></div>
+          </div>
+        </div>
+        <div class="qa-row">
+          <div>
+            <div class="qa-text"><strong>Which category has the most Round 1 questions?</strong></div>
+            <div class="qa-meta"><span class="small muted">The number of questions, time limit and marks are set by the organiser for the round as a whole and apply to every category. The difficulty and topic pool differ by category.</span></div>
+          </div>
+        </div>
+        <div class="qa-row">
+          <div>
+            <div class="qa-text"><strong>I am not sure which fits me.</strong></div>
+            <div class="qa-meta"><span class="small muted">Choose the year or level of mathematics you are currently studying. If you are genuinely unsure, contact the organiser before registration closes rather than after Round 1 opens.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row" style="justify-content:center;margin-top:2rem">
+        <a class="btn btn-primary btn-lg" href="register.html">Register and choose your category</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div data-abc-footer></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/repo.js"></script>
+<script src="js/round1.js"></script>
+<script src="js/round2.js"></script>
+<script src="js/session.js"></script>
+<script src="js/page.js"></script>
+<script>
+ABC.page({ active: 'categories.html' });
+ABC.renderCategories('[data-category-cards]');
+</script>
+</body>
+</html>

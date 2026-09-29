@@ -1,0 +1,68 @@
+rules_version = '2';
+
+/* Al-Biruni's Challenge 2026 — Storage rules.
+ * Only public page assets and participant uploads are served. Nothing else in
+ * the MATHSIMIZED bucket is reachable from this app. */
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && firestore.get(/databases/(default)/documents/abc_users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function image(size) {
+      return request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    /* Public assets: logos, category art, brand marks. */
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && request.resource.size < 5 * 1024 * 1024;
+    }
+
+    /* A participant's own avatar. */
+    match /avatars/{uid}/{file} {
+      allow read: if true;
+      allow write: if signedIn() && request.auth.uid == uid && image(5);
+    }
+
+    /* Registration attachments, e.g. a school letter. */
+    match /registrations/{uid}/{file} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if signedIn() && request.auth.uid == uid
+                   && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    /* Round 1 scripts, answer sheets and Round 2 presentation files. */
+    match /submissions/{uid}/{round}/{file} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if signedIn() && request.auth.uid == uid
+                   && request.resource.size < 25 * 1024 * 1024;
+    }
+
+    /* Certificates, uploaded by the organiser and opened from the student's
+       portal. Readable by anyone holding the link, which is the same exposure
+       as any published award; only an administrator can put one there or
+       replace it. */
+    match /certificates/{file} {
+      allow read: if true;
+      allow write: if isAdmin() && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    /* Organiser material: question papers, rubrics, templates. */
+    match /organiser/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

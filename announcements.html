@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Announcements — Al-Biruni's Challenge 2026</title>
+<meta name="description" content="Official announcements for Al-Biruni's Challenge 2026.">
+<meta name="theme-color" content="#642B36">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div data-abc-header></div>
+
+<main id="main">
+  <section class="page-head">
+    <div class="shell">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Announcements</span>
+      </nav>
+      <span class="eyebrow left">Official notices</span>
+      <h1>Announcements</h1>
+      <p class="lead">Every official update from the organiser, published here as it is released.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell-narrow">
+      <div class="card" data-ann-list>
+        <div class="loading-block"><span class="spinner"></span><span>Loading announcements…</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div data-abc-footer></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/repo.js"></script>
+<script src="js/round1.js"></script>
+<script src="js/round2.js"></script>
+<script src="js/session.js"></script>
+<script src="js/page.js"></script>
+<script>
+ABC.page({ active: 'announcements.html' });
+ABC.renderAnnouncementList('[data-ann-list]');
+</script>
+</body>
+</html>

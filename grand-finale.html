@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grand Finale — Al-Biruni's Challenge 2026</title>
+<meta name="description" content="Round 3: Build a Better World. Thirty national finalists in Karachi, November 2026.">
+<meta name="theme-color" content="#642B36">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div data-abc-header></div>
+
+<main id="main">
+  <section class="hero" style="padding-block:clamp(3rem,7vw,5rem)">
+    <div class="shell">
+      <span class="eyebrow hero-eyebrow">Round 3 &middot; Grand Finale</span>
+      <h1>Build a Better<br><span class="theta">World</span></h1>
+      <p class="hero-lead">
+        Thirty national finalists. One individual physical model each. Up to two minutes to
+        demonstrate a mathematical solution to a real-world problem.
+      </p>
+      <div class="hero-pills">
+        <span class="hero-pill">Karachi</span>
+        <span class="hero-pill">November 2026</span>
+        <span class="hero-pill">30 finalists</span>
+        <span class="hero-pill">External judges</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <div class="grid grid-2" style="gap:3rem;align-items:start">
+        <div>
+          <span class="eyebrow left">The final stage</span>
+          <h2>What finalists build</h2>
+          <p>
+            Each finalist builds an <strong>individual physical model or prototype</strong>
+            using materials provided by Mathsimized. The model must demonstrate a
+            mathematical solution to a real-world problem.
+          </p>
+          <p class="muted">
+            This is the stage that cannot be prepared for by memorising formulas. The model
+            has to work, and the demonstration has to be clear.
+          </p>
+          <h3 style="margin-top:2rem">The demonstration</h3>
+          <p class="muted">
+            Each finalist has <strong>up to two minutes</strong> to demonstrate their model to
+            the external judges. The exact event schedule, the judging rubric and the material
+            list are set by the organiser and published to finalists through their portal.
+          </p>
+        </div>
+        <aside class="stack">
+          <div class="card card-accent">
+            <h3>Grand Finale details</h3>
+            <dl class="kv">
+              <dt>City</dt><dd data-gf="city">Karachi</dd>
+              <dt>Date</dt><dd data-gf="date">November 2026</dd>
+              <dt>Venue</dt><dd data-gf="venue">To be announced</dd>
+              <dt>Reporting time</dt><dd data-gf="reportingTime">To be announced</dd>
+              <dt>Finalists</dt><dd>30 national finalists</dd>
+              <dt>Demonstration</dt><dd>Up to two minutes each</dd>
+              <dt>Judged by</dt><dd>External judges</dd>
+            </dl>
+          </div>
+          <div class="card">
+            <h3>Every finalist receives</h3>
+            <ul class="stack small" style="list-style:none;padding:0;margin:0">
+              <li>&#10003; Official Al-Biruni&rsquo;s Challenge merchandise</li>
+              <li>&#10003; Free dinner at the Grand Finale</li>
+              <li>&#10003; Participation Certificate</li>
+              <li>&#10003; Finalist Certificate</li>
+            </ul>
+            <p class="field-hint" style="margin-top:1rem;margin-bottom:0">Finalists also compete for the Winner and Runner-up prizes in their category.</p>
+          </div>
+          <div class="btn-row">
+            <a class="btn btn-primary btn-block" href="student/finalist.html">Finalist area (sign in)</a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt">
+    <div class="shell">
+      <div class="text-center" style="max-width:60ch;margin-inline:auto;margin-bottom:2.5rem">
+        <span class="eyebrow">Getting there</span>
+        <h2>From Round 2 to the Finale</h2>
+      </div>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="round-index">Step 1</div>
+          <h3>Round 2 submissions</h3>
+          <p class="muted small">Qualified students submit a presentation as a Google Drive link, built on the official Mathsimized template.</p>
+        </div>
+        <div class="card">
+          <div class="round-index">Step 2</div>
+          <h3>Judging</h3>
+          <p class="muted small">Multiple judges review each submission against the published rubric and record scores and feedback.</p>
+        </div>
+        <div class="card">
+          <div class="round-index">Step 3</div>
+          <h3>Organiser confirms finalists</h3>
+          <p class="muted small">The organiser reviews the rankings and confirms the thirty finalists. Nothing is announced without that confirmation.</p>
+        </div>
+      </div>
+      <div class="callout" style="max-width:820px;margin:2.5rem auto 0;text-align:center">
+        <strong>Finalists are confirmed by the organiser</strong>
+        Finalists are never announced automatically. The organiser reviews the complete
+        Round 2 rankings, handles any exceptional cases, and confirms the list before it
+        becomes public.
+      </div>
+    </div>
+  </section>
+</main>
+
+<div data-abc-footer></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/repo.js"></script>
+<script src="js/round1.js"></script>
+<script src="js/round2.js"></script>
+<script src="js/session.js"></script>
+<script src="js/page.js"></script>
+<script>
+ABC.page({ active: 'grand-finale.html', onConfig: function (cfg) {
+  function set(key, value) {
+    var el = document.querySelector('[data-gf="' + key + '"]');
+    if (el) el.textContent = value;
+  }
+  set('city', cfg.grandFinaleCity || 'Karachi');
+  var d = ABC.toDate(cfg.grandFinaleDate);
+  set('date', d ? ABC.fmtDate(d) : (cfg.grandFinaleMonth || 'November 2026'));
+  set('venue', cfg.grandFinaleVenue || 'To be announced');
+  set('reportingTime', cfg.grandFinaleReportingTime || 'To be announced');
+}});
+</script>
+</body>
+</html>

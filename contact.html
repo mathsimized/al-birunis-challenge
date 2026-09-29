@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact — Al-Biruni's Challenge 2026</title>
+<meta name="description" content="Contact the organiser of Al-Biruni's Challenge 2026.">
+<meta name="theme-color" content="#642B36">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div data-abc-header></div>
+
+<main id="main">
+  <section class="page-head">
+    <div class="shell">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Contact</span>
+      </nav>
+      <span class="eyebrow left">Contact</span>
+      <h1>Contact the organiser</h1>
+      <p class="lead">Questions about registration, rounds, results, certificates or judging.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <div class="grid grid-2" style="gap:3rem;align-items:start">
+        <div class="card">
+          <h2 style="font-size:1.4rem">Official channels</h2>
+          <p class="muted small">Competition news and results are posted on Instagram. Please follow the official account for Grand Finale announcements.</p>
+          <div class="stack" style="gap:.5rem;margin-top:1rem">
+            <a class="btn btn-outline btn-block" href="https://www.instagram.com/al_birunis_challenge/" target="_blank" rel="noopener">
+              &#64;al_birunis_challenge on Instagram
+            </a>
+            <a class="btn btn-ghost btn-block" href="brand-ambassadors.html">Brand Ambassador application</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="font-size:1.4rem">Send a message</h2>
+          <p class="muted small">Include your registered email address and your school so we can find your entry quickly.</p>
+          <div data-form-status></div>
+          <form id="contactForm" novalidate>
+            <div class="form-grid">
+              <div class="field" id="f-name">
+                <label for="cName">Your name <span class="req">*</span></label>
+                <input class="input" type="text" id="cName" required autocomplete="name">
+              </div>
+              <div class="field" id="f-email">
+                <label for="cEmail">Your email <span class="req">*</span></label>
+                <input class="input" type="email" id="cEmail" required autocomplete="email">
+                <div class="field-error">Enter a valid email address.</div>
+              </div>
+              <div class="field span-2" id="f-topic">
+                <label for="cTopic">What is this about? <span class="req">*</span></label>
+                <select class="select" id="cTopic">
+                  <option value="">Select a topic…</option>
+                  <option>Registration</option>
+                  <option>Round 1 — attempt or technical problem</option>
+                  <option>Round 1 — results or ranking</option>
+                  <option>Round 2 — submission or judging</option>
+                  <option>Grand Finale / finalist</option>
+                  <option>Certificates</option>
+                  <option>Brand Ambassador programme</option>
+                  <option>Something else</option>
+                </select>
+              </div>
+              <div class="field span-2" id="f-message">
+                <label for="cMessage">Message <span class="req">*</span></label>
+                <textarea class="textarea" id="cMessage" rows="6" required placeholder="Please describe your question or problem, including your registered email address."></textarea>
+                <div class="field-error">Please write a short message.</div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-lg" type="submit" id="cSubmit">Send message</button>
+          </form>
+        </div>
+
+        <aside class="stack">
+          <div class="card card-accent">
+            <h3>Direct contact</h3>
+            <dl class="kv">
+              <dt>Email</dt><dd><a data-mail href="#">mathsimized@gmail.com</a></dd>
+              <dt>Organised by</dt><dd>Mathsimized</dd>
+              <dt>Grand Finale</dt><dd data-gf>Karachi, November 2026</dd>
+            </dl>
+          </div>
+          <div class="card">
+            <h3>Before you write</h3>
+            <ul class="stack small" style="list-style:none;padding:0;margin:0">
+              <li>&#8226; Check the <a href="announcements.html">announcements</a> — most questions are answered there.</li>
+              <li>&#8226; Your own score and rank are in <a href="student/round1-result.html">your portal</a>, not on the public leaderboard.</li>
+              <li>&#8226; Read the <a href="rules.html">rules</a> for the attempt policy.</li>
+              <li>&#8226; Do not create a second account to retry Round 1 — it disqualifies the entry.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Round 1 technical problem?</h3>
+            <p class="muted small" style="margin:0">
+              If your attempt was interrupted by a genuine technical fault, say so and include
+              the time it happened. The organiser can review your attempt and may reopen it as an
+              exceptional case. Do not start a new attempt.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div data-abc-footer></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/repo.js"></script>
+<script src="js/round1.js"></script>
+<script src="js/round2.js"></script>
+<script src="js/session.js"></script>
+<script src="js/page.js"></script>
+<script>
+ABC.page({ active: 'contact.html', onConfig: function (cfg) {
+  var mail = cfg.contactEmail || 'mathsimized@gmail.com';
+  document.querySelectorAll('[data-mail]').forEach(function (a) {
+    a.href = 'mailto:' + mail; a.textContent = mail;
+  });
+  var gf = document.querySelector('[data-gf]');
+  if (gf) {
+    var d = ABC.toDate(cfg.grandFinaleDate);
+    gf.textContent = d ? (cfg.grandFinaleCity || 'Karachi') + ', ' + ABC.fmtDate(d) : ((cfg.grandFinaleCity || 'Karachi') + ', ' + (cfg.grandFinaleMonth || 'November 2026'));
+  }
+}});
+
+(function () {
+  var A = ABC;
+  var form = document.getElementById('contactForm');
+  var btn = document.getElementById('cSubmit');
+  var status = document.querySelector('[data-form-status]');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = document.getElementById('cName');
+    var email = document.getElementById('cEmail');
+    var topic = document.getElementById('cTopic');
+    var msg = document.getElementById('cMessage');
+    var ok = true;
+    function mark(id, bad) { document.getElementById(id).classList.toggle('invalid', bad); if (bad) ok = false; }
+    mark('f-name', !name.value.trim());
+    mark('f-email', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()));
+    mark('f-topic', !topic.value);
+    mark('f-message', msg.value.trim().length < 5);
+    if (!ok) return;
+
+    var subject = 'Al-Biruni\u2019s Challenge 2026 — ' + topic.value + ' — ' + name.value.trim();
+    var body = msg.value.trim() + '\n\n—\nName: ' + name.value.trim() + '\nEmail: ' + email.value.trim();
+    var to = (A.CFG && A.CFG.contactEmail) || 'mathsimized@gmail.com';
+    var href = 'mailto:' + to + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+
+    status.innerHTML = A.ui.alertBox('ok', 'Opening your email app',
+      'If nothing happens, email us directly at <a href="' + href + '">' + A.esc(to) + '</a> with these details.');
+    window.location.href = href;
+  });
+})();
+</script>
+</body>
+</html>

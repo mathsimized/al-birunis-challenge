@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Results — Al-Biruni's Challenge 2026</title>
+<meta name="description" content="Published Round 1 results for Al-Biruni's Challenge 2026, by category.">
+<meta name="theme-color" content="#642B36">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div data-abc-header></div>
+
+<main id="main">
+  <section class="page-head">
+    <div class="shell">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Results</span>
+      </nav>
+      <span class="eyebrow left">Official results</span>
+      <h1>Round 1 Results</h1>
+      <p class="lead">
+        Only the ranking positions the organiser has chosen to publish appear here.
+        Every registered student can see their own score and rank in their portal regardless.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <div data-results-status></div>
+      <div class="tabs" role="tablist" data-result-tabs></div>
+      <div data-result-panels></div>
+    </div>
+  </section>
+
+  <section class="section section-alt">
+    <div class="shell-narrow">
+      <div class="card">
+        <h3>About these results</h3>
+        <div class="alert alert-info" style="margin:1rem 0">
+          <div>
+            <strong>This is a partial public leaderboard</strong>
+            The organiser controls how many ranked positions are published and when. The
+            complete ranking is held privately by the administration and is not shown here.
+          </div>
+        </div>
+        <p class="muted small" style="margin:0">
+          If you registered and took part but cannot find your name, check your own result in
+          the <a href="student/round1-result.html">student portal</a> &mdash; your personal
+          result and rank are shown there once results have been released to students, even if
+          your position is outside the published range. If something still looks wrong,
+          <a href="contact.html">contact the organiser</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div data-abc-footer></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/repo.js"></script>
+<script src="js/round1.js"></script>
+<script src="js/round2.js"></script>
+<script src="js/session.js"></script>
+<script src="js/page.js"></script>
+<script>
+ABC.page({ active: 'results.html' });
+
+(function () {
+  var A = ABC;
+  var statusMount = document.querySelector('[data-results-status]');
+  var tabsMount = document.querySelector('[data-result-tabs]');
+  var panelMount = document.querySelector('[data-result-panels]');
+
+  function render(byCategory) {
+    var cats = A.repo.CATEGORIES;
+    var published = cats.filter(function (c) {
+      var d = byCategory[c.id];
+      return d && d.published && (d.rows || []).length;
+    });
+
+    if (!published.length) {
+      statusMount.innerHTML = A.ui.alertBox('info', 'Results have not been published yet',
+        'The organiser has not released any ranking positions publicly. Results appear here once the organiser publishes them. Your own result is always available in the student portal.');
+      tabsMount.innerHTML = '';
+      panelMount.innerHTML = A.ui.emptyState('&#9734;', 'No public results yet',
+        'Check the announcements page, or sign in to your portal to see your own result and rank.');
+      return;
+    }
+
+    statusMount.innerHTML = A.ui.alertBox('ok', 'Results published',
+      'Showing the ' + published.length + ' categor' + (published.length === 1 ? 'y' : 'ies') + ' released by the organiser.');
+
+    tabsMount.innerHTML = published.map(function (c, i) {
+      var d = byCategory[c.id];
+      return '<button class="tab" role="tab" data-cat="' + c.id + '" aria-selected="' + (i === 0) + '">' + A.esc(c.label) + '</button>';
+    }).join('');
+
+    function show(cat) {
+      var d = byCategory[cat];
+      var rows = d.rows || [];
+      if (!rows.length) {
+        panelMount.innerHTML = A.ui.emptyState('&#9675;', 'Nothing published for this category', '');
+        return;
+      }
+      var note = '';
+      if (d.limit !== 'all' && d.totalRanked > rows.length) {
+        note = '<div class="cutoff-note">Showing the top ' + rows.length + ' of ' + d.totalRanked +
+               ' ranked ' + A.plural(rows.length, 'result') + ' in this category. The remaining positions are held privately by the organiser.</div>';
+      }
+      var label = A.repo.categoryLabel(cat);
+      panelMount.innerHTML =
+        '<div class="panel"><div class="panel-header"><h2>' + A.esc(label) + '</h2>' +
+        '<span class="small muted">Published ' + A.fmtDateTime(d.publishedAt) + '</span></div>' +
+        '<div class="panel-body tight"><div class="table-wrap"><table class="leaderboard"><thead><tr>' +
+        '<th class="pos">Rank</th><th>Name</th>' + (d.showSchools ? '<th>School</th>' : '') +
+        (d.showScores ? '<th class="num">Score</th>' : '') + '<th>Status</th>' +
+        '</tr></thead><tbody>' +
+        rows.map(function (r) {
+          var medal = r.rank <= 3 ? ' medal-' + r.rank : '';
+          return '<tr class="' + medal + '"><td class="pos">' + r.rank + '</td>' +
+            '<td>' + (d.showNames === false ? 'Hidden' : A.esc(r.name || '—')) + '</td>' +
+            (d.showSchools ? '<td class="small muted">' + A.esc(r.school || '—') + '</td>' : '') +
+            (d.showScores ? '<td class="num pts">' + A.esc(r.score) + (r.maxScore ? ' <span class="muted small">/ ' + A.esc(r.maxScore) + '</span>' : '') + '</td>' : '') +
+            '<td>' + (r.qualified ? '<span class="badge badge-ok">Qualified</span>' : '<span class="badge badge-muted">Participated</span>') + '</td></tr>';
+        }).join('') +
+        '</tbody></table></div>' + note + '</div></div>';
+
+      A.tabsMount = tabsMount;
+      tabsMount.querySelectorAll('[data-cat]').forEach(function (b) {
+        b.onclick = function () {
+          tabsMount.querySelectorAll('[data-cat]').forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+          b.setAttribute('aria-selected', 'true');
+          show(b.dataset.cat);
+        };
+      });
+    }
+
+    show(published[0].id);
+  }
+
+  var byCat = {};
+  A.round1.onPublicResults(function (rows) {
+    rows.forEach(function (r) { byCat[r.id] = r; });
+    render(byCat);
+  });
+})();
+</script>
+</body>
+</html>

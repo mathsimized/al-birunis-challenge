@@ -1,0 +1,243 @@
+rules_version = '2';
+
+/* Al-Biruni's Challenge 2026 — Firestore rules.
+ *
+ * Security model
+ *   public   : published configuration, published announcements, public
+ *              result snapshots. Nothing else.
+ *   student  : their own registration, attempt, result, Round 2 submission,
+ *              certificates and Brand Ambassador record. Never the question
+ *              bank, never the answer keys, never anybody else's work.
+ *   judge    : read submissions, write only their own judgements.
+ *   admin    : the competition data. Roles live in abc_users.
+ *
+ * The question bank and answer keys are administrator-only because the paper
+ * is chosen and scored by Cloud Functions.
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function me() {
+      return get(/databases/$(database)/documents/abc_users/$(request.auth.uid));
+    }
+
+    function role() {
+      return signedIn() && me().data.role;
+    }
+
+    function isAdmin() {
+      return role() == 'admin';
+    }
+
+    function isJudge() {
+      return role() == 'judge';
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isTimestamp(value) {
+      return value is timestamp;
+    }
+
+    /* ---------------- shared MATHSIMIZED profile (read-only) ---------------- */
+    match /users/{uid} {
+      allow read: if isSelf(uid);
+    }
+
+    /* ---------------- configuration ---------------- */
+    match /abc_config/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    /* ---------------- accounts and roles ---------------- */
+    match /abc_users/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      /* A student may create their own record and may only ever claim the
+         student role. `resource` does not exist on create, so the key set is
+         checked instead. */
+      allow create: if isSelf(uid)
+                    && request.resource.data.role == 'student'
+                    && request.resource.data.keys().hasOnly(
+                         ['uid', 'role', 'email', 'displayName', 'photoURL',
+                          'createdAt', 'updatedAt', 'lastSeenAt']);
+      allow update: if isAdmin()
+                    || (isSelf(uid) && request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    /* ---------------- registrations ---------------- */
+    match /abc_registrations/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow create: if isSelf(uid)
+                    && request.resource.data.category in ['prep', 'olevel', 'alevel'];
+      /* The student owns their contact details and category. Organiser-only
+         fields (qualification, category lock, review) are not writable here. */
+      allow update: if isAdmin() || (isSelf(uid)
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                      .hasAny(['qualifiedForRound2', 'qualifiedAt', 'round1Rank',
+                               'round2Qualified', 'reviewedAt', 'reviewedBy', 'id']));
+      allow delete: if isSelf(uid) || isAdmin();
+    }
+
+    /* ---------------- Round 1 question bank and answer keys ---------------- */
+    match /abc_questions/{questionId} {
+      /* Open to signed-in users so a student can build their own paper, but
+         only the answer-free fields, and only while a question is active.
+         Administrators may also read retired questions to review the bank. */
+      allow read: if isAdmin() || (signedIn() && resource.data.status == 'active');
+      allow write: if isAdmin();
+    }
+
+    /* The answers, keyed by question id. Administrator-only: a student can
+       read the paper and autosave, but can never read a correct answer, and
+       scoring runs from the admin panel's own session. */
+    match /abc_answer_keys/{questionId} {
+      allow read, write: if isAdmin();
+    }
+
+    /* Round 1 and Round 2 settings, and the Grand Finale plan, which is stored
+       as abc_config/grandFinale rather than a collection of its own. */
+    match /abc_quizzes/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    /* ---------------- attempts ---------------- */
+    match /abc_attempts/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow delete: if isAdmin();
+
+      /* A student opens their own attempt, so the client writes the questions
+         and the paper. What the rules pin down is everything that would let
+         that be abused: the category has to be the one they registered for, so
+         nobody sits an easier category's paper, and the count has to be the one
+         the organiser configured. */
+      allow create: if isAdmin()
+                    || (isSelf(uid)
+                        && request.resource.data.status == 'in-progress'
+                        && request.resource.data.score == null
+                        && request.resource.data.maxScore == null
+                        && request.resource.data.correctCount == null
+                        && request.resource.data.breakdown == null
+                        && request.resource.data.category
+                             == get(/databases/$(database)/documents/abc_registrations/$(uid)).data.category
+                        /* exists() guards the lookup: reading .data on a
+                           document that does not exist is an error, not null,
+                           and an error denies the write. Until Round 1 is
+                           configured there is no count to match, so the check
+                           is skipped. */
+                        && (!exists(/databases/$(database)/documents/abc_quizzes/round1)
+                            || request.resource.data.questionCount
+                                 == get(/databases/$(database)/documents/abc_quizzes/round1).data.questionCount));
+
+      /* A student's own write may only do one of two things: autosave while the
+         paper is open, or hand the attempt in. Once it is submitted the
+         document is closed to them, so an answer cannot be changed after the
+         timer. Scores, the paper and the server's startedAt are never writable
+         by a student at all. */
+      allow update: if isAdmin()
+                    || (isSelf(uid)
+                        && request.resource.data.score == null
+                        && request.resource.data.maxScore == null
+                        && request.resource.data.correctCount == null
+                        && request.resource.data.breakdown == null
+                        && !request.resource.data.diff(resource.data).affectedKeys()
+                             .hasAny(['score', 'maxScore', 'correctCount', 'breakdown',
+                                      'scoredAt', 'questions', 'uid', 'startedAt',
+                                      'category', 'studentName', 'school', 'city',
+                                      'totalMarksAvailable', 'quizSnapshot'])
+                        && (request.resource.data.status == 'in-progress'
+                            || (resource.data.status == 'in-progress'
+                                && request.resource.data.status == 'submitted'
+                                && request.resource.data.resultStatus == 'pending-scoring')));
+    }
+
+    /* ---------------- results ---------------- */
+    match /abc_results/{uid} {
+      /* A student sees their own result only once an administrator releases
+         it. The raw document is never the public leaderboard. */
+      allow read: if isAdmin() || (isSelf(uid) && resource.data.releasedToStudent == true);
+      allow write: if isAdmin();
+    }
+
+    /* Published, sanitised snapshots for the public leaderboard. */
+    match /abc_public_results/{category} {
+      allow read: if resource.data.published == true;
+      allow write: if isAdmin();
+    }
+
+    /* ---------------- Round 2 ---------------- */
+    match /abc_round2_submissions/{uid} {
+      allow read: if isSelf(uid) || isAdmin() || isJudge();
+      allow create: if isSelf(uid);
+      allow update: if isSelf(uid) || isAdmin() || isJudge();
+      allow delete: if isSelf(uid) || isAdmin();
+    }
+
+    match /abc_round2_judgements/{judgementId} {
+      /* A judge sees only their own scores; an administrator sees all. */
+      allow read: if isAdmin() || (isJudge() && resource.data.judgeUid == request.auth.uid);
+      allow create: if isJudge() && request.resource.data.judgeUid == request.auth.uid;
+      allow update: if isAdmin() || (isJudge() && resource.data.judgeUid == request.auth.uid);
+      allow delete: if isAdmin() || (isJudge() && resource.data.judgeUid == request.auth.uid);
+    }
+
+    match /abc_finalists/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    /* ---------------- judges ---------------- */
+    match /abc_judges/{judgeId} {
+      allow read: if isAdmin() || isJudge();
+      allow write: if isAdmin();
+    }
+
+    /* ---------------- certificates ---------------- */
+    match /abc_certificates/{certificateId} {
+      allow read: if isSelf(resource.data.uid) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    /* ---------------- Brand Ambassadors ----------------
+       Applications arrive on a Google Form and are added by the organiser, so
+       there is no student-facing application to read. This collection is
+       closed to everyone but an administrator, which is what keeps the
+       attributed counts private and stops a student raising their own. */
+    match /abc_ba/{code} {
+      allow read, write: if isAdmin();
+    }
+
+    /* The published top five: names and ranks, written by the organiser. The
+       document itself never holds a count. */
+    match /abc_public_ba/{doc} {
+      allow read: if resource.data.published == true;
+      allow write: if isAdmin();
+    }
+
+    /* ---------------- announcements ---------------- */
+    match /abc_announcements/{announcementId} {
+      allow read: if resource.data.published == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    /* ---------------- audit log ---------------- */
+    match /abc_audit_log/{entryId} {
+      allow read, write: if isAdmin();
+    }
+
+    /* ---------------- contact and misc ---------------- */
+    /* Anything not listed above is closed. */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

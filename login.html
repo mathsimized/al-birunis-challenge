@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log In — Al-Biruni's Challenge 2026</title>
+<meta name="description" content="Sign in to Al-Biruni's Challenge 2026 with your existing Mathsimized account.">
+<meta name="theme-color" content="#642B36">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<div class="auth-page">
+
+  <aside class="auth-aside">
+    <div>
+      <a class="brand" href="index.html" style="color:#FFF9EF">
+        <span style="width:44px;flex:none" data-emblem-small></span>
+        <span class="brand-text">
+          <span class="brand-name" style="color:#FFF9EF">Al-Biruni&rsquo;s Challenge</span>
+          <span class="brand-sub">2026 &middot; by Mathsimized</span>
+        </span>
+      </a>
+      <h1 style="margin-top:2.5rem">Welcome back.</h1>
+      <p>Sign in with your existing Mathsimized account to reach your competition dashboard, your Round 1 attempt and your certificates.</p>
+      <ul class="steps">
+        <li><span class="n">1</span><span>Your Round 1 result and rank</span></li>
+        <li><span class="n">2</span><span>Your Round 2 submission status</span></li>
+        <li><span class="n">3</span><span>Your certificates, once released</span></li>
+        <li><span class="n">4</span><span>Grand Finale information, if you are a finalist</span></li>
+      </ul>
+    </div>
+    <p class="small" style="color:rgba(223,166,161,.8);margin:0">
+      This competition is a separate website with its own portal. Your login is shared,
+      your experience is not.
+    </p>
+  </aside>
+
+  <main class="auth-main" id="main">
+    <div class="auth-card">
+      <div class="text-center" style="margin-bottom:1.5rem">
+        <h1 style="font-size:2rem;margin-bottom:.35rem">Log in</h1>
+        <p class="muted small" style="margin:0">Use your Mathsimized email and password.</p>
+      </div>
+
+      <div data-error></div>
+
+      <form id="loginForm" novalidate>
+        <div class="field" id="f-email">
+          <label for="email">Email</label>
+          <input class="input" type="email" id="email" name="email" autocomplete="email" required placeholder="you@example.com">
+          <div class="field-error">Enter a valid email address.</div>
+        </div>
+        <div class="field" id="f-pass">
+          <label for="password">Password</label>
+          <input class="input" type="password" id="password" name="password" autocomplete="current-password" required>
+          <div class="field-error">Enter your password.</div>
+        </div>
+        <div class="flex-between" style="margin-bottom:1.25rem">
+          <div class="checkline" style="margin:0">
+            <input type="checkbox" id="remember" checked>
+            <label for="remember" style="text-transform:none;letter-spacing:0;font-size:.9rem">Keep me signed in</label>
+          </div>
+          <a href="forgot-password.html" class="small">Forgot password?</a>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" type="submit" id="submitBtn">Log in</button>
+      </form>
+
+      <div class="ornament-rule"><span class="glyph" aria-hidden="true">&#952;</span></div>
+
+      <p class="text-center small muted" style="margin:0">
+        No Mathsimized account yet? <a href="register.html">Create one and register</a>.
+      </p>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/repo.js"></script>
+<script src="js/round1.js"></script>
+<script src="js/round2.js"></script>
+<script src="js/session.js"></script>
+<script>
+(function () {
+  var A = ABC;
+  var m = document.querySelector('[data-emblem-small]');
+  if (m) m.innerHTML = A.ui.emblemSVG(44).replace('class="emblem"', 'class="emblem" style="margin:0"');
+
+  var form = document.getElementById('loginForm');
+  var btn = document.getElementById('submitBtn');
+  var errBox = document.querySelector('[data-error]');
+  var next = A.queryParam('next');
+
+  function fail(message) {
+    errBox.innerHTML = A.ui.alertBox('danger', '', message);
+  }
+
+  function friendly(code) {
+    switch (code) {
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+      case 'auth/user-not-found':
+        return 'That email and password combination was not recognised.';
+      case 'auth/invalid-email':
+        return 'That email address is not valid.';
+      case 'auth/too-many-requests':
+        return 'Too many attempts. Please wait a few minutes and try again.';
+      case 'auth/user-disabled':
+        return 'This account has been disabled. Please contact the organiser.';
+      case 'auth/network-request-failed':
+        return 'Network problem. Check your connection and try again.';
+      default:
+        return 'Something went wrong while signing in. Please try again.';
+    }
+  }
+
+  function go(user) {
+    if (next) {
+      var depth = (location.pathname.split('/').filter(Boolean).length) - 1;
+      A.redirect('../'.repeat(Math.max(0, depth)) + next);
+      return;
+    }
+    A.repo.ensureUser(user).then(function (rec) {
+      if (rec.role === ABC.ROLE.ADMIN) { A.redirect('admin/index.html'); return; }
+      A.redirect('student/dashboard.html');
+    });
+  }
+
+  /* If already signed in, skip the form. */
+  ABC.READY.then(function (user) { if (user) go(user); });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    errBox.innerHTML = '';
+    var email = form.email.value.trim();
+    var pass = form.password.value;
+    form.email.parentNode.classList.toggle('invalid', !email);
+    form.password.parentNode.classList.toggle('invalid', !pass);
+    if (!email || !pass) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Signing in…';
+    A.session.signIn(email, pass, form.remember.checked)
+      .then(go)
+      .catch(function (err) { fail(friendly(err && err.code)); })
+      .then(function () { btn.disabled = false; btn.textContent = 'Log in'; });
+  });
+})();
+</script>
+</body>
+</html>
