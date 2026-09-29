@@ -60,6 +60,48 @@ service cloud.firestore {
       return value is timestamp;
     }
 
+    /* ---------------- Round 1 window ----------------
+       Whether it is currently possible to open a Round 1 attempt, read from
+       the same config the student portal already reads.
+
+       Without this the dates are advisory. The portal hides the start button
+       outside the window, but the portal is the client, and the client is not
+       the security boundary: a student who opens devtools, or simply replays
+       the request, could open an attempt the week before the round or long
+       after it closed, and the score would still be scored from the admin
+       panel as though nothing had happened. Nothing else in these rules
+       checks a clock.
+
+       Only *opening* is gated. An attempt started inside the window may still
+       be submitted after it closes, which is deliberate: a student's paper
+       must not be lost to a dropped connection in the last minute, and the
+       attempt is already pinned to a server start time. */
+
+    /* The window is skipped when Round 1 has not been configured yet, so a new
+       project is not locked shut by a document that does not exist. `get` with
+       a default is used rather than a bare field access, because reading a
+       field the document does not have is an error in rules, and an error
+       denies the write — an unconfigured closesAt would then read as "closed"
+       rather than "no deadline". */
+    function round1WindowOpen() {
+      return !exists(/databases/$(database)/documents/abc_quizzes/round1)
+             || (round1AfterOpening() && round1BeforeClosing());
+    }
+
+    function round1AfterOpening() {
+      return !(get(/databases/$(database)/documents/abc_quizzes/round1)
+                 .data.get('opensAt', null) is timestamp)
+             || request.time >= get(/databases/$(database)/documents/abc_quizzes/round1)
+                                  .data.get('opensAt', null);
+    }
+
+    function round1BeforeClosing() {
+      return !(get(/databases/$(database)/documents/abc_quizzes/round1)
+                 .data.get('closesAt', null) is timestamp)
+             || request.time <= get(/databases/$(database)/documents/abc_quizzes/round1)
+                                  .data.get('closesAt', null);
+    }
+
     /* ---------------- usernames ----------------
      * One document per username, named by the username itself, so that
      * checking whether a name is free is a single read. Anyone may read one:
@@ -161,6 +203,7 @@ service cloud.firestore {
          the organiser configured. */
       allow create: if isAdmin()
                     || (isSelf(uid)
+                        && round1WindowOpen()
                         && request.resource.data.status == 'in-progress'
                         && request.resource.data.score == null
                         && request.resource.data.maxScore == null

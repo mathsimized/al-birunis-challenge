@@ -49,6 +49,13 @@ const SPLIT_REQUIRED = [
      shared a project, and dangerously wrong now. A comment is not enforced at
      runtime, so only a test catches it going stale. */
   ['the header names this project', /Target project: al-birunis-challenge/],
+  ['the round window is checked with the server clock', /function round1AfterOpening\(\)[\s\S]{0,400}?request\.time >=/],
+  ['and with the server clock on the closing side too', /function round1BeforeClosing\(\)[\s\S]{0,400}?request\.time <=/],
+  ['it reads the configured opening time', /round1AfterOpening\(\)[\s\S]{0,400}?data\.get\('opensAt', null\)/],
+  ['and the configured closing time', /round1BeforeClosing\(\)[\s\S]{0,400}?data\.get\('closesAt', null\)/],
+  ['a missing config does not lock the round shut', /!exists\([\s\S]{0,120}?abc_quizzes\/round1\)/],
+  ['and it is enforced when an attempt is opened', /allow create: if isAdmin\(\)[\s\S]{0,200}?round1WindowOpen\(\)/],
+  ['an unconfigured deadline is not read as "closed"', /\.data\.get\('opensAt', null\) is timestamp/],
 
   ['the admin is identified by the verified email', /function isOrganiser\(\)[\s\S]{0,160}?request\.auth\.token\.email == 'mathsimized@gmail\.com'/],
   ['the organiser can bootstrap their own admin record', /isOrganiser\(\)\s*\?\s*request\.resource\.data\.role == 'admin'/],
