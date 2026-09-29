@@ -1,4 +1,4 @@
-/* Al-Biruni's Challenge 2026 — shared page bootstrap
+/* Al-Biruni\'s Challenge 2026 — shared page bootstrap
    Sets up the header/footer and loads the competition configuration for
    content pages. Load this before any page-specific script. */
 
@@ -72,7 +72,7 @@
       const list = limit ? rows.slice(0, limit) : rows;
       if (!list.length) {
         el.innerHTML = A.ui.emptyState('&#9675;', 'No announcements yet',
-          'Official notices will appear here as the organiser publishes them.');
+          'Official notices will appear here as we publish them.');
         return;
       }
       el.innerHTML = list.map((a) => {

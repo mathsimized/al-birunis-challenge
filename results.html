@@ -22,7 +22,7 @@
       <span class="eyebrow left">Official results</span>
       <h1>Round 1 Results</h1>
       <p class="lead">
-        Only the ranking positions the organiser has chosen to publish appear here.
+        Only the ranking positions the team has chosen to publish appear here.
         Every registered student can see their own score and rank in their portal regardless.
       </p>
     </div>
@@ -43,7 +43,7 @@
         <div class="alert alert-info" style="margin:1rem 0">
           <div>
             <strong>This is a partial public leaderboard</strong>
-            The organiser controls how many ranked positions are published and when. The
+            The team controls how many ranked positions are published and when. The
             complete ranking is held privately by the administration and is not shown here.
           </div>
         </div>
@@ -52,7 +52,7 @@
           the <a href="student/round1-result.html">student portal</a> &mdash; your personal
           result and rank are shown there once results have been released to students, even if
           your position is outside the published range. If something still looks wrong,
-          <a href="contact.html">contact the organiser</a>.
+          <a href="contact.html">contact the Al-Biruni's organising team</a>.
         </p>
       </div>
     </div>
@@ -90,7 +90,7 @@ ABC.page({ active: 'results.html' });
 
     if (!published.length) {
       statusMount.innerHTML = A.ui.alertBox('info', 'Results have not been published yet',
-        'The organiser has not released any ranking positions publicly. Results appear here once the organiser publishes them. Your own result is always available in the student portal.');
+        'The team has not released any ranking positions publicly. Results appear here once we publish them. Your own result is always available in the student portal.');
       tabsMount.innerHTML = '';
       panelMount.innerHTML = A.ui.emptyState('&#9734;', 'No public results yet',
         'Check the announcements page, or sign in to your portal to see your own result and rank.');
@@ -98,7 +98,7 @@ ABC.page({ active: 'results.html' });
     }
 
     statusMount.innerHTML = A.ui.alertBox('ok', 'Results published',
-      'Showing the ' + published.length + ' categor' + (published.length === 1 ? 'y' : 'ies') + ' released by the organiser.');
+      'Showing the ' + published.length + ' categor' + (published.length === 1 ? 'y' : 'ies') + ' released by the team.');
 
     tabsMount.innerHTML = published.map(function (c, i) {
       var d = byCategory[c.id];
@@ -115,7 +115,7 @@ ABC.page({ active: 'results.html' });
       var note = '';
       if (d.limit !== 'all' && d.totalRanked > rows.length) {
         note = '<div class="cutoff-note">Showing the top ' + rows.length + ' of ' + d.totalRanked +
-               ' ranked ' + A.plural(rows.length, 'result') + ' in this category. The remaining positions are held privately by the organiser.</div>';
+               ' ranked ' + A.plural(rows.length, 'result') + ' in this category. The remaining positions are held privately by the team.</div>';
       }
       var label = A.repo.categoryLabel(cat);
       panelMount.innerHTML =

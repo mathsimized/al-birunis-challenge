@@ -1,5 +1,5 @@
 /* Round 2 submission — the student pastes a Google Drive link to their
-   presentation. The organiser controls the window and the lock. */
+   presentation. The team controls the window and the lock. */
 (function () {
   'use strict';
   const A = ABC;
@@ -47,10 +47,10 @@
     const editable = st.code === 'open' && !locked;
 
     let banner;
-    if (st.code === 'draft') banner = note('info', 'Submissions are not open yet', 'The organiser will publish the Round 2 brief and open the submission window shortly.');
+    if (st.code === 'draft') banner = note('info', 'Submissions are not open yet', 'The team will publish the Round 2 brief and open the submission window shortly.');
     else if (st.code === 'upcoming') banner = note('info', 'Submissions have not opened yet', 'The window opens on ' + A.fmtDateTime(st.opensAt) + '.');
-    else if (st.code === 'closed') banner = note('warn', 'Submissions are closed', 'The submission window closed on ' + A.fmtDateTime(st.closesAt) + '. Any changes now need the organiser.');
-    else if (locked) banner = note('ok', 'Your submission is locked', 'Your work has been submitted and locked. Contact the organiser if it must be reopened.');
+    else if (st.code === 'closed') banner = note('warn', 'Submissions are closed', 'The submission window closed on ' + A.fmtDateTime(st.closesAt) + '. Any changes now need the team.');
+    else if (locked) banner = note('ok', 'Your submission is locked', 'Your work has been submitted and locked. Contact the Al-Biruni\'s organising team if it must be reopened.');
     else if (sub) banner = note('info', 'You can still update your link', 'Your saved link is shown below. Submit again to replace it before the window closes.');
     else banner = '';
 
@@ -98,11 +98,11 @@
           <div class="card">
             <h3 style="font-size:1.05rem">Checklist</h3>
             <ul class="stack small" style="padding-left:1.15rem;margin:1rem 0 0">
-              <li>Use the official template${cfg.templateUrl ? ' (linked on the Round 2 page)' : ' provided by the organiser'}.</li>
+              <li>Use the official template${cfg.templateUrl ? ' (linked on the Round 2 page)' : ' provided by the team'}.</li>
               <li>Explain one mathematical idea clearly and originally.</li>
               <li>A recording of you presenting is optional.</li>
               <li>Check the link opens in a private/incognito window before submitting.</li>
-              <li>You may update your link until the organiser locks your submission.</li>
+              <li>You may update your link until we lock your submission.</li>
             </ul>
           </div>
           ${sub ? `<div class="card">

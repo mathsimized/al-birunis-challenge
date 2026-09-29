@@ -43,7 +43,7 @@
               <button class="btn btn-primary btn-sm" id="saveName">Update display name</button>
               <button class="btn btn-outline btn-sm" id="sendReset">Email me a password reset link</button>
             </div>
-            <p class="field-hint" style="margin-top:.75rem">Your email address is your login identity and cannot be changed here. Contact the organiser if it is wrong.</p>
+            <p class="field-hint" style="margin-top:.75rem">Your email address is your login identity and cannot be changed here. Contact the Al-Biruni\'s organising team if it is wrong.</p>
           </div>
 
           <div class="card">

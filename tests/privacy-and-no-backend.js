@@ -380,6 +380,71 @@ if (/\.hud-card \{|\.game-panel \{|\.qindex-strip/.test(read('css/main.css'))) {
   fail('round 1 game styles exist');
 }
 
+/* One address opens the panel. It is matched on the verified email, in the same
+   place the Firestore rules match it, so the browser and the database cannot
+   disagree about who is the organiser. */
+[
+  ['login opens the panel on the organiser email', /isAdminEmail[\s\S]{0,200}?A\.redirect\('admin\/index\.html'\)/],
+  ['the email wins over a `next` redirect', /if \(isAdminEmail\) \{ A\.redirect\('admin\/index\.html'\);[\s\S]{0,320}?if \(next\)/],
+  ['everyone else is sent to their own portal', /A\.redirect\('student\/dashboard\.html'\)/],
+  ['the address is compared case-insensitively', /toLowerCase\(\) === String\(ABC\.ADMIN_EMAIL/]
+].forEach(([label, re]) => {
+  if (re.test(read('login.html'))) pass('admin access: ' + label);
+  else fail('admin access: ' + label);
+});
+
+[
+  ['isAdmin trusts the verified email, not just a stored role', /function isAdmin\(userRecord\)[\s\S]{0,400}?toLowerCase\(\) === String\(A\.ADMIN_EMAIL/],
+  ['a non-admin is returned to their own portal, not the home page', /A\.redirect\('student\/dashboard\.html'\), 1200/]
+].forEach(([label, re]) => {
+  const src = read('js/repo.js') + read('js/session.js');
+  if (re.test(src)) pass('admin access: ' + label);
+  else fail('admin access: ' + label);
+});
+
+/* Students are never offered the panel. */
+[
+  ['the student sidebar links nowhere near the admin panel', /NAV_PORTAL/]
+].forEach(([label, re]) => {
+  /* slice out just the student nav list, not the whole file */
+  const ui = read('js/ui.js');
+  const start = ui.indexOf('NAV_PORTAL = [');
+  const end = ui.indexOf('NAV_ADMIN = [');
+  const list = start > -1 ? ui.slice(start, end > -1 ? end : undefined) : '';
+  if (re.test(list) && list && !/admin\//.test(list)) pass('admin access: ' + label);
+  else fail('admin access: ' + label);
+});
+
+if (/\{ href: 'student\/dashboard\.html', label: 'My Student Portal'/.test(read('js/ui.js'))) {
+  pass('admin access: the panel links back to the organiser\'s own portal');
+} else {
+  fail('admin access: the panel links back to the organiser\'s own portal');
+}
+
+/* "organiser" read as somebody else running the competition. The site speaks
+   as the team instead: "we" for actions, "the Al-Biruni's organising team" for
+   a name, and "the judges" only where judging is genuinely meant. */
+{
+  const app = ['js', '.'].flatMap((d) => {
+    const out = [];
+    const walk = (dir, depth) => {
+      if (depth > 3) return;
+      for (const e of require('fs').readdirSync(dir, { withFileTypes: true })) {
+        if (e.name.startsWith('.') || e.name === 'tests' || e.name === 'node_modules') continue;
+        const full = require('path').join(dir, e.name);
+        if (e.isDirectory()) walk(full, depth + 1);
+        else if (/\.(js|html)$/.test(e.name)) out.push(full);
+      }
+    };
+    walk(d, 0);
+    return out;
+  }).map((f) => read(f)).join('\n');
+
+  const offenders = (app.match(/[^\w'](?:the )?[Oo]rganiser/g) || []).length;
+  if (offenders) fail('voice: no "organiser" in anything a visitor reads (' + offenders + ' left)');
+  else pass('voice: no "organiser" in anything a visitor reads');
+}
+
 if (/certificateAsset/.test(read('js/pages/student/certificates.js'))) {
   pass('certificates: the student portal opens whatever asset was attached');
 } else {

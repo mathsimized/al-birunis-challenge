@@ -57,7 +57,7 @@
     else if (av.code === 'done') notice = note('ok', 'You have completed Round 1',
       'Your official attempt has been submitted and you have one attempt only, so a new attempt cannot be started.');
     else if (av.code === 'closed') notice = note('warn', 'Round 1 is closed',
-      'Round 1 is now closed. If you took part, your result will appear once the organiser releases it.');
+      'Round 1 is now closed. If you took part, your result will appear once we release it.');
 
     const canStart = av.code === 'open' && !done;
 
@@ -432,7 +432,7 @@
     clearInterval(timer);
     A.round1.submitAttempt(attempt.uid, { manual: false })
       .then(function () { showSubmitted(true); })
-      .catch(function () { showSubmitted(true, 'Your time ran out. The organiser has been notified.'); });
+      .catch(function () { showSubmitted(true, 'Your time ran out. The team has been notified.'); });
   }
 
   function confirmSubmit() {
@@ -470,7 +470,7 @@
           ${note ? `<div class="alert alert-warn" style="margin-top:1rem;text-align:left"><div>${A.esc(note)}</div></div>` : ''}
           <div class="callout" style="margin-top:1.5rem;text-align:left">
             <strong>What happens next</strong>
-            Your result and rank will appear in your portal once the organiser reviews the
+            Your result and rank will appear in your portal once we review the
             leaderboard and releases results. You will see your own result and rank whether or
             not you appear on the public leaderboard.
           </div>

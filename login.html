@@ -104,7 +104,7 @@
       case 'auth/too-many-requests':
         return 'Too many attempts. Please wait a few minutes and try again.';
       case 'auth/user-disabled':
-        return 'This account has been disabled. Please contact the organiser.';
+        return 'This account has been disabled. Please contact the Al-Biruni's organising team.';
       case 'auth/network-request-failed':
         return 'Network problem. Check your connection and try again.';
       default:
@@ -113,13 +113,20 @@
   }
 
   function go(user) {
+    /* The team address is identified by the email itself, not by a role
+       in Firestore. That way the panel opens on the very first sign-in, before
+       any record exists, and it still opens if the record is deleted. */
+    var isAdminEmail = (user.email || '').toLowerCase() === String(ABC.ADMIN_EMAIL || '').toLowerCase();
+    if (isAdminEmail) { A.redirect('admin/index.html'); return; }
+
+    /* Everyone else goes to their own portal. A `next` only ever points at a
+       portal page, so it is safe to honour. */
     if (next) {
       var depth = (location.pathname.split('/').filter(Boolean).length) - 1;
       A.redirect('../'.repeat(Math.max(0, depth)) + next);
       return;
     }
-    A.repo.ensureUser(user).then(function (rec) {
-      if (rec.role === ABC.ROLE.ADMIN) { A.redirect('admin/index.html'); return; }
+    A.repo.ensureUser(user).then(function () {
       A.redirect('student/dashboard.html');
     });
   }

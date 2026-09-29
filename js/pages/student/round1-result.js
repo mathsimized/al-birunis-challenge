@@ -50,7 +50,7 @@
     if (!result.releasedToStudent) {
       mount.innerHTML = `<h1>Round 1 result</h1>
         ${note('info', 'Your result is not published yet',
-          'You have completed your attempt. Your score and rank will appear here as soon as the organiser releases results to students.')}
+          'You have completed your attempt. Your score and rank will appear here as soon as we release results to students.')}
         ${attemptCard(attempt, reg)}
         <div class="btn-row" style="margin-top:1.5rem"><a class="btn btn-outline" href="dashboard.html">Back to dashboard</a></div>`;
       return;
@@ -95,12 +95,12 @@
           ${result.qualified
             ? `<p class="muted small" style="margin:.5rem 0 .75rem">You have qualified for Round 2, the Mathematical Communication Challenge. Watch the announcements for the submission window.</p>
                <a class="btn btn-primary btn-sm" href="round2.html">Go to Round 2</a>`
-            : `<p class="muted small" style="margin:.5rem 0 .75rem">Thank you for taking part in Round 1. Any certificate released by the organiser will appear in your portal.</p>
+            : `<p class="muted small" style="margin:.5rem 0 .75rem">Thank you for taking part in Round 1. Any certificate released by we will appear in your portal.</p>
                <a class="btn btn-outline btn-sm" href="certificates.html">My certificates</a>`}
         </div>
         <div class="card">
           <h2 style="font-size:1.15rem">Public leaderboard</h2>
-          <p class="muted small" style="margin:.5rem 0 .75rem">The organiser chooses how many ranked positions are shown publicly. Your own rank above is always yours to see.</p>
+          <p class="muted small" style="margin:.5rem 0 .75rem">The team chooses how many ranked positions are shown publicly. Your own rank above is always yours to see.</p>
           <a class="btn btn-outline btn-sm" href="${A.rootPath('results.html')}">View public results</a>
         </div>
       </div>`;
@@ -117,7 +117,7 @@
         <dt>Status</dt><dd>${A.statusBadge(attempt.resultStatus === 'scored' ? 'scored' : 'submitted')}</dd>
       </dl>
       ${attempt.resultStatus === 'scored' ? '' :
-        '<p class="field-hint" style="margin-top:1rem;margin-bottom:0">Your answers are with the organiser. Your result and rank appear here once scoring is complete, and results are released with the announcement.</p>'}
+        '<p class="field-hint" style="margin-top:1rem;margin-bottom:0">Your answers are with the team. Your result and rank appear here once scoring is complete, and results are released with the announcement.</p>'}
     </div>`;
   }
 
@@ -125,6 +125,6 @@
     if (t === 'submission_time') return 'Earlier submission ranked higher in a tie';
     if (t === 'first_to_finish') return 'Earlier finish ranked higher in a tie';
     if (!t) return 'No tie-break applied — equal scores share a rank';
-    return 'As configured by the organiser';
+    return 'As configured by the team';
   }
 })();

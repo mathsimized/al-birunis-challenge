@@ -37,7 +37,7 @@
   function windowState() {
     const o = A.toDate(cfg.opensAt), c = A.toDate(cfg.closesAt), now = Date.now();
     if (cfg.status === 'draft') return { code: 'draft', label: 'Not open yet' };
-    if (cfg.status === 'closed') return { code: 'closed', label: 'Closed by the organiser' };
+    if (cfg.status === 'closed') return { code: 'closed', label: 'Closed by us' };
     if (o && now < o.getTime()) return { code: 'upcoming', label: 'Opens ' + A.fmtDateTime(o), opensAt: o };
     if (c && now > c.getTime()) return { code: 'closed', label: 'Closed ' + A.fmtDateTime(c) };
     return { code: 'open', label: 'Open now' };
@@ -54,7 +54,7 @@
     let banner;
     if (!qualified) {
       banner = note('warn', 'Not yet qualified',
-        'Round 2 is for students who qualified in Round 1. Your Round 1 result will show your status, and this page will update once the organiser finalises qualification.');
+        'Round 2 is for students who qualified in Round 1. Your Round 1 result will show your status, and this page will update once the team finalises qualification.');
     } else if (state.code === 'draft') {
       banner = note('info', 'Round 2 is not open yet',
         'The brief and submission window are still being finalised. Announcements will be published when Round 2 opens.');
@@ -106,8 +106,8 @@
           <div class="card">
             <h3 style="font-size:1.05rem">Submit or edit your work</h3>
             <p class="muted small" style="margin:0 0 .75rem">${sub && sub.locked
-              ? 'Your submission is locked. Contact the organiser if it needs to be reopened.'
-              : 'You can submit once the window is open, and update your link until the organiser locks it.'}</p>
+              ? 'Your submission is locked. Contact the Al-Biruni\'s organising team if it needs to be reopened.'
+              : 'You can submit once the window is open, and update your link until we lock it.'}</p>
             <a class="btn btn-primary btn-sm btn-block" href="round2-submit.html">${sub ? 'View submission' : 'Submit my work'}</a>
           </div>
 
@@ -139,7 +139,7 @@
         <dt>Topic</dt><dd>${A.esc(sub.topic || '—')}</dd>
         <dt>Submitted</dt><dd>${A.fmtDateTime(sub.submittedAt)}</dd>
         ${A.num(sub.resubmitCount) > 0 ? `<dt>Last updated</dt><dd>${A.fmtDateTime(sub.resubmittedAt)}</dd>` : ''}
-        <dt>Status</dt><dd>${sub.locked ? 'Locked by the organiser' : 'Editable'}</dd>
+        <dt>Status</dt><dd>${sub.locked ? 'Locked by us' : 'Editable'}</dd>
       </dl>
       <a class="btn btn-outline btn-sm" style="margin-top:1rem" href="round2-submit.html">${sub.locked ? 'View details' : 'Edit submission'}</a>
     </div>`;

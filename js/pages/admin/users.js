@@ -30,7 +30,7 @@
         ${stat('Registered students', regs.length, 'Competition entries')}
       </div>
 
-      ${A.ui.alertBox('info', 'Two roles only. ', 'Students can reach their own portal and nothing else. Administrators can reach this panel. The organiser role is granted automatically to the address you sign in with, so it can never be taken away from you here.')}
+      ${A.ui.alertBox('info', 'Two roles only. ', 'Students can reach their own portal and nothing else. Administrators can reach this panel. The team role is granted automatically to the address you sign in with, so it can never be taken away from you here.')}
 
       <div data-panel="users"></div>`;
 
@@ -76,7 +76,7 @@
             { value: A.ROLE.STUDENT, label: 'Student' },
             { value: A.ROLE.ADMIN, label: 'Administrator' }
           ],
-          hint: u.email === A.ADMIN_EMAIL ? 'This account is the configured organiser address and always keeps administrator access.' : ''
+          hint: u.email === A.ADMIN_EMAIL ? 'This account is the configured team address and always keeps administrator access.' : ''
         }
       ]).then(function (v) {
         if (!v) return;

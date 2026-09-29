@@ -1,7 +1,7 @@
 /* Finalists — who reaches the Grand Finale, their award, and publishing.
  *
    Judging happens off the platform, so there is no ranked list and no score
-   here. The organiser works from the results they were given, confirms the
+   here. The team works from the results they were given, confirms the
    students by name, and then releases the list. */
 (function () {
   'use strict';

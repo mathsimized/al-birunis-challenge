@@ -32,11 +32,11 @@
 
     mount.innerHTML = `
       <h1>Announcements</h1>
-      <p class="muted">Official notices from the organiser. Check this page between rounds.</p>
+      <p class="muted">Official notices from the team. Check this page between rounds.</p>
 
       <div class="grid" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:1.5rem;align-items:start;margin-top:1.5rem">
         <div>
-          ${mine.length ? mine.map(item).join('') : A.ui.emptyState('&#9675;', 'No announcements yet', 'Official notices will appear here as the organiser publishes them.')}
+          ${mine.length ? mine.map(item).join('') : A.ui.emptyState('&#9675;', 'No announcements yet', 'Official notices will appear here as we publish them.')}
         </div>
         <aside class="stack">
           ${notes.length ? `<div class="card"><h3 style="font-size:1.05rem">Your status</h3><div class="stack" style="margin-top:1rem">${notes.join('')}</div></div>` : ''}

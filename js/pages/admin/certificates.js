@@ -122,7 +122,7 @@
 
   function asset(c) { return A.repo.certificateAsset(c); }
 
-  /* The organiser supplies the file. It goes into Firestore as a data URI
+  /* The team supplies the file. It goes into Firestore as a data URI
      rather than Cloud Storage, because Cloud Storage needs the Blaze plan. */
   function uploadFile(c, button) {
     if (!c) return;

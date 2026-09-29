@@ -53,11 +53,16 @@ receives the results separately, then marks the qualifying students on
 scores, rubric or judge records are stored anywhere in the app, so there is
 nothing for them to leak from.
 
-The organiser account is `mathsimized@gmail.com`. That address is granted the
-admin role from its verified sign-in token, so the panel can never lock the
-organiser out of their own site — an earlier version required an existing admin
-to create the record, which is impossible for the first admin. Roles for other
-accounts are set on **Admin → Users & Access → Accounts**.
+The admin account is `mathsimized@gmail.com`. Access is decided by the
+**verified sign-in token**, not by a role stored in Firestore, and the browser
+and the ruleset make the same comparison — so the two can never disagree. That
+address signs in straight to the panel, on the first attempt and even if its
+record is deleted. Everyone else lands in their own portal and is never shown
+the panel. An earlier version required an existing admin to create the first
+admin's record, which is impossible, and locked the organiser out of their own
+site.
+
+Other roles are set on **Admin → Users & Access → Accounts**.
 
 ## 2b. One login, two steps
 

@@ -59,7 +59,7 @@
                    <div class="stat"><div class="stat-label">Judges' score</div><div class="stat-value">${finalist.finalScore !== undefined && finalist.finalScore !== null ? A.esc(A.num(finalist.finalScore)) : '—'}</div></div>
                    <div class="stat ${award ? 'success' : ''}"><div class="stat-label">Outcome</div><div class="stat-value" style="font-size:1.35rem">${award ? A.esc(award.label) : 'Finalist'}</div>${award && award.cash ? `<div class="stat-hint">${A.esc(award.cash)}</div>` : ''}</div>
                  </div>`
-              : `<p class="muted small" style="margin:.75rem 0 0">Your Grand Finale result and award will appear here once the organiser has announced it.</p>`}
+              : `<p class="muted small" style="margin:.75rem 0 0">Your Grand Finale result and award will appear here once the team has announced it.</p>`}
           </div>
         </div>
 
@@ -74,13 +74,13 @@
           </div>
           <div class="card">
             <h3 style="font-size:1.05rem">Certificates</h3>
-            <p class="muted small" style="margin:0 0 .75rem">Finalist and award certificates appear in your portal, where you can view and download them, once the organiser releases them.</p>
+            <p class="muted small" style="margin:0 0 .75rem">Finalist and award certificates appear in your portal, where you can view and download them, once we release them.</p>
             <a class="btn btn-outline btn-sm btn-block" href="certificates.html">My certificates</a>
           </div>
           <div class="card">
             <h3 style="font-size:1.05rem">Need help?</h3>
-            <p class="muted small" style="margin:0 0 .75rem">Contact the organiser for travel, timing or accessibility questions.</p>
-            <a class="btn btn-outline btn-sm btn-block" href="${A.rootPath('contact.html')}">Contact organiser</a>
+            <p class="muted small" style="margin:0 0 .75rem">Contact the Al-Biruni\'s organising team for travel, timing or accessibility questions.</p>
+            <a class="btn btn-outline btn-sm btn-block" href="${A.rootPath('contact.html')}">Contact the team</a>
           </div>
         </aside>
       </div>`;

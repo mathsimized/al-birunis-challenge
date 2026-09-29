@@ -1,4 +1,4 @@
-/* Al-Biruni's Challenge 2026 — student portal bootstrap
+/* Al-Biruni\'s Challenge 2026 — student portal bootstrap
    Renders the site header, the portal sidebar and provides a small set of
    reusable status helpers shared by every student page. */
 

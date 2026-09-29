@@ -1,4 +1,4 @@
-/* Al-Biruni's Challenge 2026 — session and access control
+/* Al-Biruni\'s Challenge 2026 — session and access control
    ------------------------------------------------------------------
    Students sign in with their existing Mathsimized identity. This app
    only ever *reads* the shared MATHSIMIZED `users` document to pre-fill a
@@ -93,7 +93,7 @@
 
   /* A username, not a full name. This is the same account the student uses
      on MATHSIMIZED, so the full name belongs in the competition registration
-     form, where the organiser needs it for certificates — not here, where
+     form, where we need it for certificates — not here, where
      someone might type a nickname. */
   async function signUp(email, password, username) {
     const cred = await A.auth.createUserWithEmailAndPassword(email, password);
@@ -132,8 +132,12 @@
     if (isAdminRoute(route)) {
       const rec = await R.ensureUser(user);
       if (!R.isAdmin(rec)) {
-        A.ui.toast('You do not have access to the administration panel.', 'error');
-        setTimeout(() => A.redirect(home()), 1200);
+        /* Nobody should ever see this: the guard on every admin page is an
+           email comparison, and only one address matches. It stays in place
+           so a future third-party account cannot reach the panel by guessing
+           a URL. */
+        A.ui.toast('This account does not have access to the panel.', 'error');
+        setTimeout(() => A.redirect('student/dashboard.html'), 1200);
         return null;
       }
       SESSION.record = rec;

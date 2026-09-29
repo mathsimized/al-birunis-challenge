@@ -32,7 +32,7 @@
     }
     if (close && now > close.getTime()) {
       return A.ui.alertBox('warn', 'Registration has closed',
-        'Registration closed at the end of <strong>' + A.fmtDate(close) + '</strong>. If you believe you should have been registered, contact the organiser.');
+        'Registration closed at the end of <strong>' + A.fmtDate(close) + '</strong>. If you believe you should have been registered, contact the Al-Biruni\'s organising team.');
     }
     /* Students care about the deadline, not when it opened, so lead with that. */
     return A.ui.alertBox('ok', 'Registration is open',
@@ -50,7 +50,7 @@
       <span class="eyebrow left">Step 1 of the journey</span>
       <h1>Competition registration</h1>
       <p class="muted">Confirm your category and tell us about your school. It takes a minute.</p>
-      ${welcome ? A.ui.alertBox('ok', 'Your account is ready', 'This form is the competition registration. Your name, category and school are what the organiser needs to enter you, and what will appear on your certificates. It is saved to your account, so you only fill this in once.') : ''}
+      ${welcome ? A.ui.alertBox('ok', 'Your account is ready', 'This form is the competition registration. Your name, category and school are what we need to enter you, and what will appear on your certificates. It is saved to your account, so you only fill this in once.') : ''}
       ${required ? A.ui.alertBox('warn', 'Registration required', 'You need to register before you can take part in Round 1.') : ''}
       <div style="margin:1.5rem 0">${windowNotice()}</div>
       <div data-form></div>`;
@@ -102,13 +102,13 @@
           <div class="field">
             <label for="parentContact">Parent / guardian contact</label>
             <input class="input" type="tel" id="parentContact" placeholder="Optional">
-            <div class="field-hint">Only used if the organiser needs to reach you.</div>
+            <div class="field-hint">Only used if we need to reach you.</div>
           </div>
           <div class="field span-2" id="f-ba">
             <label for="baCode">Brand Ambassador code</label>
             <input class="input" type="text" id="baCode" placeholder="e.g. BA-XXXXXX">
             <div class="field-hint">If a Brand Ambassador referred you, enter the code they
-              sent you. The organiser credits it for you — you do not need to do anything else, and
+              sent you. The team credits it for you — you do not need to do anything else, and
               you will not be able to see or change the count.</div>
           </div>
         </div>
@@ -191,7 +191,7 @@
     mount.innerHTML = `
       <span class="eyebrow left">Step 1 of the journey</span>
       <h1>Your registration</h1>
-      <p class="muted">These are the details the organiser holds for your entry.</p>
+      <p class="muted">These are the details we hold for your entry.</p>
 
       <div class="grid" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:1.5rem;align-items:start;margin-top:1.5rem">
         <div class="panel">
@@ -216,7 +216,7 @@
             <h3 style="font-size:1.05rem">Can I change something?</h3>
             <p class="muted small" style="margin:0 0 .75rem">
               ${attemptStarted
-                ? 'Your Round 1 attempt has already been used, so your category is now fixed. Contact the organiser for any other correction.'
+                ? 'Your Round 1 attempt has already been used, so your category is now fixed. Contact the Al-Biruni\'s organising team for any other correction.'
                 : 'Your category and details can still be corrected up until you start your Round 1 attempt.'}
             </p>
             <button class="btn btn-outline btn-sm btn-block" id="editBtn" ${attemptStarted ? 'disabled' : ''}>Edit details</button>

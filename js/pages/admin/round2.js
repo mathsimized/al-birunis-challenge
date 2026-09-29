@@ -1,6 +1,6 @@
 /* Round 2 admin — submissions, and marking finalists.
  *
- * Judging is not done on this platform. The organiser is given the results
+ * Judging is not done on this platform. The team is given the results
  * separately, then ticks the students who qualified and publishes their names.
  * So this page deliberately holds no scores and no rubric: there is nothing
  * here for a score to leak out of, and a browser cannot enforce a marking

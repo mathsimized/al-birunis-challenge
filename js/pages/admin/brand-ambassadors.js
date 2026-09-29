@@ -262,7 +262,7 @@
   /* Add or edit one applicant. The fields mirror the Google Form. */
   /* ---------- paste from the response sheet ----------
 
-   * The organiser copies rows out of the Google Form's linked sheet. That
+   * The team copies rows out of the Google Form's linked sheet. That
    * gives tab-separated text with a header line, but it may also be pasted as
    * CSV, and a response sheet is full of columns nobody wants (timestamps,
    * email addresses in the wrong place, a trailing "never submit again" line).

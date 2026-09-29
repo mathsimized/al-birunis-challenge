@@ -1,4 +1,4 @@
-/* Al-Biruni's Challenge 2026 — data layer
+/* Al-Biruni\'s Challenge 2026 — data layer
    ------------------------------------------------------------------
    All competition data lives in namespaced `abc_*` collections so this
    standalone app never reads or writes the existing MATHSIMIZED data
@@ -62,9 +62,9 @@
      Every value the brief left unconfirmed is null/empty here and is
      edited in the admin panel. Nothing unconfirmed is hardcoded. */
   const DEFAULT_CONFIG = {
-    name: "Al-Biruni's Challenge 2026",
+    name: "Al-Biruni\'s Challenge 2026",
     tagline: 'Think · Explain · Create',
-    organiser: 'MATHSIMIZED',
+    team: 'MATHSIMIZED',
     instagramUrl: 'https://www.instagram.com/al_birunis_challenge/',
     instagramHandle: '@al_birunis_challenge',
     grandFinaleCity: 'Karachi',
@@ -193,7 +193,12 @@
   }
 
   function isAdmin(userRecord) {
-    return !!userRecord && userRecord.role === A.ROLE.ADMIN;
+    if (userRecord && userRecord.role === A.ROLE.ADMIN) return true;
+    /* The team address is admin by the verified sign-in token, not by a
+       stored role. This is the same condition the Firestore rules use, so the
+       two can never disagree. */
+    const email = (A.user && A.user.email) || '';
+    return !!email && email.toLowerCase() === String(A.ADMIN_EMAIL || '').toLowerCase();
   }
 
   async function listUsers() {
@@ -237,10 +242,10 @@
     if (!CATEGORY_IDS.includes(category)) throw new Error('Please choose a valid category.');
 
     /* The Brand Ambassador code is taken down as free text and credited by the
-       organiser, not by this page. Brand Ambassador records are administrator
+       team, not by this page. Brand Ambassador records are administrator
        only — that is what keeps the numbers private — so the code cannot be
        checked here, and a student could not raise their own count even if this
-       write were left open. The organiser runs "Attribute registrations" in the
+       write were left open. The team runs "Attribute registrations" in the
        Brand Ambassador panel once the code has been issued to them. */
     const baCode = String(data.baCode || '').trim().toUpperCase();
 
@@ -345,7 +350,7 @@
 
   /* ---------------- brand ambassadors ---------------- */
   /* Applications arrive on a Google Form, not on this site, so there is no
-     student-facing application. The organiser adds each approved applicant
+     student-facing application. The team adds each approved applicant
      here, which mints their code. Records are keyed by the code, because that
      is what a student types on the registration form.
 
@@ -418,7 +423,7 @@
     return limit ? ranked.slice(0, limit) : ranked;
   }
 
-  /* Credits registrations that carry a code. Run by the organiser: a student
+  /* Credits registrations that carry a code. Run by the team: a student
      cannot raise their own count, and a registration is credited at most once
      because attributedUids is checked inside the batch. */
   async function attributeRegistrations() {
@@ -549,7 +554,7 @@
     return ref.id;
   }
 
-  /* The organiser uploads the certificate file; releasing makes it visible in
+  /* The team uploads the certificate file; releasing makes it visible in
      the student's portal. No email is sent, because sending one from a
      browser would mean shipping an email API key to every visitor. */
   async function releaseCertificate(id) {

@@ -22,7 +22,7 @@
       <span class="eyebrow left">Competition structure</span>
       <h1>Three rounds, three different abilities</h1>
       <p class="lead">
-        Each round is designed to test something the previous round could not. The organiser
+        Each round is designed to test something the previous round could not. The team
         publishes the exact parameters of each round as announcements.
       </p>
     </div>
@@ -43,7 +43,7 @@
           <p class="muted">
             The quiz is drawn from an administrator-managed question bank, so the exact
             question count, time limit, marks and tie-breaking method are set by the
-            organiser and announced in advance. Those details are not fixed by the website.
+            team and announced in advance. Those details are not fixed by the website.
           </p>
           <h3 style="margin-top:1.75rem">What it tests</h3>
           <div class="grid grid-2" style="gap:.75rem">
@@ -59,8 +59,8 @@
             <h3>Round 1 format</h3>
             <dl class="kv">
               <dt>Format</dt><dd>Online quiz</dd>
-              <dt>Questions</dt><dd data-r1-q>Announced by organiser</dd>
-              <dt>Time limit</dt><dd data-r1-t>Announced by organiser</dd>
+              <dt>Questions</dt><dd data-r1-q>Announced by team</dd>
+              <dt>Time limit</dt><dd data-r1-t>Announced by team</dd>
               <dt>Attempts</dt><dd>One official attempt per student</dd>
               <dt>Progresses</dt><dd data-r1-qual>Top students per category</dd>
               <dt>Window</dt><dd data-r1-window>To be announced</dd>
@@ -70,11 +70,11 @@
             <h3>Attempt rules</h3>
             <ul class="stack small" style="list-style:none;padding:0;margin:0">
               <li>&#8226; One official attempt is permitted per student.</li>
-              <li>&#8226; Your attempt autosaves, so an interrupted session can be resumed if the organiser allows it.</li>
+              <li>&#8226; Your attempt autosaves, so an interrupted session can be resumed if the team allows it.</li>
               <li>&#8226; The attempt submits automatically when the time limit expires.</li>
               <li>&#8226; Correct answers are never shown to you during or after the attempt.</li>
-              <li>&#8226; Your result and rank become visible only after the organiser releases results.</li>
-              <li>&#8226; If something goes wrong, contact the organiser &mdash; do not create a second account.</li>
+              <li>&#8226; Your result and rank become visible only after the team releases results.</li>
+              <li>&#8226; If something goes wrong, contact the Al-Biruni's organising team &mdash; do not create a second account.</li>
             </ul>
             <div class="btn-row" style="margin-top:1.25rem">
               <a class="btn btn-outline btn-sm" href="student/round1.html">Round 1 in your portal</a>
@@ -121,7 +121,7 @@
               <dt>Deliverable</dt><dd>Presentation (Drive link)</dd>
               <dt>Template</dt><dd>Official Mathsimized PowerPoint</dd>
               <dt>Assessment</dt><dd>Reviewed by the panel, off this website</dd>
-              <dt>Rubric</dt><dd data-r2-rubric>Published by organiser</dd>
+              <dt>Judging</dt><dd>Assessed off this website by the panel</dd>
               <dt>Progresses</dt><dd data-r2-qual>Top students per category</dd>
               <dt>Window</dt><dd data-r2-window>To be announced</dd>
             </dl>
@@ -130,7 +130,7 @@
             <div>
               <strong>Check your Drive sharing settings</strong>
               Your link must be accessible to the panel. Test it in a private browser window
-              before you submit. Once submitted, your submission is locked unless the organiser
+              before you submit. Once submitted, your submission is locked unless the team
               reopens it.
             </div>
           </div>
@@ -162,8 +162,8 @@
             <strong>up to two minutes</strong> for their demonstration.
           </p>
           <p class="muted">
-            The exact date, venue, schedule, judging rubric and material list are set by the
-            organiser and published to finalists through their portal.
+            The exact date, venue, schedule and material list are set by the
+            team and published to finalists through their portal.
           </p>
         </div>
         <aside class="stack">
@@ -198,7 +198,7 @@
         <strong>A note on unconfirmed details</strong>
         The number of Round 1 questions, the time limit, the exact marks, the tie-breaking
         rule, the Round 2 rubric and the Grand Finale schedule have not been finalised.
-        Rather than guessing, they are configurable by the organiser and announced before
+        Rather than guessing, they are configurable by the team and announced before
         each round opens.
       </div>
     </div>
@@ -231,8 +231,8 @@ ABC.page({ active: 'rounds.html', onConfig: function (cfg) {
 
 ABC.round1.getQuiz().then(function (q) {
   var e;
-  if ((e = document.querySelector('[data-r1-q]'))) e.textContent = q.questionCount ? q.questionCount + ' questions' : 'Announced by organiser';
-  if ((e = document.querySelector('[data-r1-t]'))) e.textContent = q.timeLimitMinutes ? q.timeLimitMinutes + ' minutes' : 'Announced by organiser';
+  if ((e = document.querySelector('[data-r1-q]'))) e.textContent = q.questionCount ? q.questionCount + ' questions' : 'Announced by team';
+  if ((e = document.querySelector('[data-r1-t]'))) e.textContent = q.timeLimitMinutes ? q.timeLimitMinutes + ' minutes' : 'Announced by team';
   var o = ABC.toDate(q.opensAt), c = ABC.toDate(q.closesAt);
   if ((e = document.querySelector('[data-r1-window]'))) {
     e.textContent = (o ? ABC.fmtDate(o) : 'TBA') + (c ? ' – ' + ABC.fmtDate(c) : '');
@@ -241,9 +241,6 @@ ABC.round1.getQuiz().then(function (q) {
 
 ABC.round2.getRound2Config().then(function (r2) {
   var e;
-  if ((e = document.querySelector('[data-r2-rubric]'))) {
-    e.textContent = (r2.rubric || []).length ? r2.rubric.length + ' criteria, published with the round' : 'Published by organiser';
-  }
   var o = ABC.toDate(r2.opensAt), c = ABC.toDate(r2.closesAt);
   if ((e = document.querySelector('[data-r2-window]'))) {
     e.textContent = (o ? ABC.fmtDate(o) : 'TBA') + (c ? ' – ' + ABC.fmtDate(c) : '');

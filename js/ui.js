@@ -1,4 +1,4 @@
-/* Al-Biruni's Challenge 2026 — shared UI shell
+/* Al-Biruni\'s Challenge 2026 — shared UI shell
    Renders the site header, navigation, footer, toasts and modals so that
    every page shares one consistent frame. */
 
@@ -58,6 +58,7 @@
     { href: 'admin/announcements.html', label: 'Announcements', glyph: '◈' },
     { section: 'Access' },
     { href: 'admin/users.html', label: 'Users & Access', glyph: '●' },
+    { href: 'student/dashboard.html', label: 'My Student Portal', glyph: '☺' },
     { href: 'index.html', label: '← Public Site', glyph: '↩' }
   ];
 
@@ -65,7 +66,7 @@
   function emblemSVG(size) {
     const s = size || 220;
     return `
-<svg class="emblem" viewBox="0 0 240 240" width="${s}" height="${s}" role="img" aria-label="Al-Biruni's Challenge emblem: a scholar with a telescope directed at a circle marked theta">
+<svg class="emblem" viewBox="0 0 240 240" width="${s}" height="${s}" role="img" aria-label="Al-Biruni\'s Challenge emblem: a scholar with a telescope directed at a circle marked theta">
   <defs>
     <linearGradient id="abcGold" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#D8BC7E"/><stop offset="100%" stop-color="#B78B3C"/>
@@ -259,6 +260,8 @@
       if (i.section) return `<li class="nav-section">${esc(i.section)}</li>`;
       return `<li><a href="${A.rootPath(i.href)}"${i.href === active ? ' aria-current="page"' : ''}><span class="glyph" aria-hidden="true">${i.glyph}</span>${esc(i.label)}</a></li>`;
     }).join('')}
+    <li class="nav-section">Elsewhere</li>
+    <li><a href="${A.rootPath('index.html')}"><span class="glyph" aria-hidden="true">⌂</span>Public site</a></li>
   </ul>
 </aside>`;
   }

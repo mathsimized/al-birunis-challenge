@@ -175,7 +175,7 @@
 
     /* The account is the only thing created here. The competition details —
        full name, category, school — are filled in on the portal straight
-       after, and that is where the organiser needs them. */
+       after, and that is where we need them. */
     A.session.signUp($('#email').value.trim(), $('#password').value, $('#username').value.trim())
       .then(function () {
         A.ui.toast('Account created. One more step: tell us about yourself.', 'ok');
@@ -198,7 +198,7 @@
     if (open && now < open.getTime()) {
       el.innerHTML = 'Registration opens <strong>' + A.fmtDate(open) + '</strong>. You can still create your account now.';
     } else if (close && now > close.getTime()) {
-      el.innerHTML = 'Registration has <strong>closed</strong>. Contact the organiser if you need help.';
+      el.innerHTML = 'Registration has <strong>closed</strong>. Contact the Al-Biruni's organising team if you need help.';
     } else if (open) {
       el.innerHTML = 'Registration is <strong>open</strong> until ' + A.fmtDate(close) + '.';
     } else {

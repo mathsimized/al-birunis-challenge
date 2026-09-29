@@ -67,7 +67,7 @@
             <div><span class="figure-label">Rank</span><span class="figure-value">${A.esc(A.ordinal(result.rank))}</span></div>
             <div><span class="figure-label">Status</span><span class="figure-value" style="font-size:1.1rem">${result.qualified ? 'Qualified' : 'Not qualified'}</span></div>
           </div>`
-        : `<p style="margin:0">Your attempt has been submitted. Your result will appear here once the organiser releases results.</p>`;
+        : `<p style="margin:0">Your attempt has been submitted. Your result will appear here once we release results.</p>`;
       r1Action = released
         ? `<a class="btn btn-outline" href="round1-result.html">View full result</a>`
         : `<a class="btn btn-secondary" href="round1-result.html">Result page</a>`;
@@ -110,12 +110,12 @@
     /* --- Grand Finale step --- */
     const finaleOpen = !!fin;
     const gfBody = finaleOpen
-      ? `<p style="margin:0">You are a confirmed finalist. Event details appear here once the organiser releases them.</p>
+      ? `<p style="margin:0">You are a confirmed finalist. Event details appear here once we release them.</p>
          <div class="figures">
            <div><span class="figure-label">Location</span><span class="figure-value" style="font-size:1.1rem">${A.esc(finale.city || (config && config.grandFinaleCity) || 'Karachi')}</span></div>
            <div><span class="figure-label">Date</span><span class="figure-value" style="font-size:1.1rem">${A.esc(A.toDate(finale.date) ? A.fmtDate(finale.date) : ((config && config.grandFinaleMonth) || 'November 2026'))}</span></div>
          </div>`
-      : `<p style="margin:0">Thirty finalists reach the Grand Finale in Karachi, November 2026. Finalists are confirmed by the organiser.</p>`;
+      : `<p style="margin:0">Thirty finalists reach the Grand Finale in Karachi, November 2026. Finalists are confirmed by the Al-Biruni\'s organising team.</p>`;
     const gfAction = finaleOpen ? `<a class="btn btn-primary" href="finalist.html">Open finalist area</a>` : '';
 
     /* --- Certificates count --- */
@@ -139,7 +139,7 @@
       </div>
 
       ${r1av.code === 'open' && !attempt ? A.ui.alertBox('info', 'Round 1 is open', 'You have not started your official attempt yet. Remember: one attempt only.') : ''}
-      ${r1av.code === 'closed' && attempt && attempt.status === 'in-progress' ? A.ui.alertBox('warn', 'Round 1 has closed', 'If you have an attempt still in progress, contact the organiser — do not start a new one.') : ''}
+      ${r1av.code === 'closed' && attempt && attempt.status === 'in-progress' ? A.ui.alertBox('warn', 'Round 1 has closed', 'If you have an attempt still in progress, contact the Al-Biruni\'s organising team — do not start a new one.') : ''}
 
       <div class="grid" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:1.5rem;align-items:start;margin-top:1.5rem">
         <div>

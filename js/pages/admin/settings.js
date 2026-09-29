@@ -82,7 +82,7 @@
       <div class="form-grid">
         ${text('name', 'Competition name', cfg.name)}
         ${text('tagline', 'Tagline', cfg.tagline)}
-        ${text('organiser', 'Organiser', cfg.organiser)}
+        ${text('team', 'Al-Biruni\'s team', cfg.team)}
         ${text('contactEmail', 'Contact email', cfg.contactEmail, 'email')}
         ${num('finalistCount', 'Number of finalists', cfg.finalistCount, '30 finalists reach the Grand Finale.')}
         ${num('grandFinaleDemoMinutes', 'Demonstration time (minutes)', cfg.grandFinaleDemoMinutes, 'Confirmed: up to two minutes.')}
@@ -230,7 +230,7 @@
 
     if (name === 'general') {
       return A.repo.saveConfig({
-        name: v('name'), tagline: v('tagline'), organiser: v('organiser'), contactEmail: v('contactEmail'),
+        name: v('name'), tagline: v('tagline'), team: v('team'), contactEmail: v('contactEmail'),
         finalistCount: n('finalistCount'), grandFinaleDemoMinutes: n('grandFinaleDemoMinutes'),
         announceRegistrationOpen: checked('announceRegistrationOpen'),
         announceRound1Open: checked('announceRound1Open'),

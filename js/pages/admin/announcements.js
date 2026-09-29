@@ -140,7 +140,7 @@
     }));
   }
 
-  /* Copy the organiser can paste into the announcement and into Instagram.
+  /* Copy the team can paste into the announcement and into Instagram.
      The top five is names and ranks only: the counts behind it stay private. */
   function topFiveCopy(ranked) {
     const top = ranked.slice(0, 5);
@@ -150,7 +150,7 @@
       body: 'Our top five Brand Ambassadors for Al-Biruni\'s Challenge 2026 are:\n\n'
         + lines.join('\n') + '\n\n'
         + 'Thank you to every ambassador who took part. Registration counts behind '
-        + 'this ranking are kept private by the organiser, and the Best Brand Ambassador '
+        + 'this ranking are kept private by the team, and the Best Brand Ambassador '
         + 'award will be presented at the Grand Finale award ceremony in Karachi.\n\n'
         + 'Full details: ' + A.rootPath('brand-ambassadors.html')
     };

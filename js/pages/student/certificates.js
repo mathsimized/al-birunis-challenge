@@ -19,14 +19,14 @@
     if (!ordered.length) {
       mount.innerHTML = `<h1>My certificates</h1>
         ${A.ui.emptyState('&#10070;', 'No certificates yet',
-          'Certificates appear here as soon as the organiser releases them. Each one can be viewed and downloaded straight from this page.')}
+          'Certificates appear here as soon as we release them. Each one can be viewed and downloaded straight from this page.')}
         <div class="btn-row" style="justify-content:center"><a class="btn btn-outline" href="dashboard.html">Back to dashboard</a></div>`;
       return;
     }
 
     mount.innerHTML = `
       <h1>My certificates</h1>
-      <p class="muted">Every certificate released to you is available here to view and download. Keep this page bookmarked, and quote the certificate code if you need to ask the organiser for a replacement.</p>
+      <p class="muted">Every certificate released to you is available here to view and download. Keep this page bookmarked, and quote the certificate code if you need to ask the team for a replacement.</p>
 
       <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.5rem;align-items:start;margin-top:1.5rem">
         <div class="stack">
@@ -35,12 +35,12 @@
         <aside class="stack">
           <div class="card">
             <h3 style="font-size:1.05rem">Need a replacement?</h3>
-            <p class="muted small" style="margin:0 0 .75rem">Contact the organiser quoting the certificate code shown on each card, and a fresh copy can be uploaded for you.</p>
-            <a class="btn btn-outline btn-sm btn-block" href="${A.rootPath('contact.html')}">Contact organiser</a>
+            <p class="muted small" style="margin:0 0 .75rem">Contact the Al-Biruni\'s organising team quoting the certificate code shown on each card, and a fresh copy can be uploaded for you.</p>
+            <a class="btn btn-outline btn-sm btn-block" href="${A.rootPath('contact.html')}">Contact the team</a>
           </div>
           <div class="card">
             <h3 style="font-size:1.05rem">Name on certificates</h3>
-            <p class="muted small" style="margin:0">Certificates use your registered name. If it is wrong, contact the organiser before the certificate is produced.</p>
+            <p class="muted small" style="margin:0">Certificates use your registered name. If it is wrong, contact the Al-Biruni\'s organising team before the certificate is produced.</p>
             <a class="btn btn-outline btn-sm btn-block" style="margin-top:.75rem" href="registration.html">Check my details</a>
           </div>
         </aside>

@@ -1,4 +1,4 @@
-/* Al-Biruni's Challenge 2026 — Round 1 engine
+/* Al-Biruni\'s Challenge 2026 — Round 1 engine
    ------------------------------------------------------------------
    Attempt lifecycle:  not-started -> in-progress -> submitted -> scored
 
@@ -31,7 +31,7 @@
       id: 'round1',
       title: 'Round 1 — Rapid-Fire Online Qualifier',
       /* window — Round 1 is attempted on 1 Nov 2026, the same day students
-         register. The organiser can move these from the Round 1 settings. */
+         register. The team can move these from the Round 1 settings. */
       opensAt: '2026-11-01T09:00:00',
       closesAt: '2026-11-01T23:59:00',
       /* paper */
@@ -50,7 +50,7 @@
       /* results */
       resultsVisibleImmediately: false,
       resultsReleasedToStudents: false,
-      /* null until the organiser confirms the tie-break rule.
+      /* null until we confirm the tie-break rule.
          'submission_time' | 'first_to_finish' | 'none' */
       tieBreak: null,
       /* The window above is date-gated to 1 Nov, so this defaults to open and
@@ -178,7 +178,7 @@
     const existing = await getAttempt(user.uid);
     if (existing) {
       if (existing.status === 'in-progress') {
-        if (quiz.allowResume === false) throw new Error('Resuming is disabled for this round. Contact the organiser.');
+        if (quiz.allowResume === false) throw new Error('Resuming is disabled for this round. Contact the Al-Biruni\'s organising team.');
         return existing;
       }
       if (quiz.oneAttemptPerStudent !== false) {
@@ -275,7 +275,7 @@
   /* Marks the attempt submitted and hands it to the admin panel for scoring.
      startedAt and submittedAt are both server timestamps, so a tampered
      device clock cannot rewrite history; the panel shows the true elapsed
-     time and the organiser can void an attempt held open past the deadline. */
+     time and the team can void an attempt held open past the deadline. */
   async function submitAttempt(uid, opts) {
     const options = opts || {};
     const ref = attemptRef(uid);
@@ -345,7 +345,7 @@
         marks,
         marksAwarded: isCorrect ? marks : 0,
         /* True when the attempt sat open well past the time limit, so the
-           organiser can decide what to do before releasing anything. */
+           team can decide what to do before releasing anything. */
         suspect: !!(attempt.startedAt && A.num(attempt.timeLimitMinutes, 0) &&
           A.toDate(attempt.startedAt) &&
           (A.toDate(attempt.submittedAt || attempt.lastSavedAt) || new Date()) -
@@ -387,7 +387,7 @@
      Dense ranks within a category. Tie-break is configurable and never
      hardcoded to a specific rule. */
   function rankAttempts(attempts, quiz) {
-    /* No tie-break is applied until the organiser sets one; equal scores
+    /* No tie-break is applied until the team sets one; equal scores
        then share a rank and the next score skips (1, 2, 2, 4). */
     const tie = (quiz && quiz.tieBreak) || 'none';
     const rows = attempts.slice();
@@ -419,7 +419,7 @@
         .filter((r) => r.resultStatus === 'scored');
       const [quiz, cfg] = await Promise.all([getQuiz(), R.getConfig()]);
       const ranked = rankAttempts(scored, quiz);
-      /* Qualification quota is organiser-controlled and not yet confirmed,
+      /* Qualification quota is team-controlled and not yet confirmed,
          so it stays null until the admin sets it. A quota of 0 means nobody
          is auto-qualified; no quota means qualification is decided manually. */
       const rawQuota = quiz.qualifyPerCategory !== null && quiz.qualifyPerCategory !== undefined

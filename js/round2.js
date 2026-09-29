@@ -1,4 +1,4 @@
-/* Al-Biruni's Challenge 2026 — Round 2, judging, finalists, Grand Finale
+/* Al-Biruni\'s Challenge 2026 — Round 2, judging, finalists, Grand Finale
    ------------------------------------------------------------------
    Round 2 is a mathematical communication challenge. Students submit a
    Google Drive link (presentation material, PDF, recording, or a folder).
@@ -30,7 +30,7 @@
       resultsAt: null,
       instructions: '',
       /* Judging happens off the platform, so there is no rubric and no
-         weighting here. What is recorded is whether the organiser has
+         weighting here. What is recorded is whether the team has
          published the names, which is what students are allowed to see. */
       resultsReleasedToStudents: false,
       status: 'draft'
@@ -111,7 +111,7 @@
   async function submitRound2(user, registration, data) {
     const cfg = await getRound2Config();
     if (cfg.status === 'draft') throw new Error('Round 2 is not open for submissions yet.');
-    if (cfg.status === 'closed') throw new Error('The organiser has closed Round 2 submissions.');
+    if (cfg.status === 'closed') throw new Error('The team has closed Round 2 submissions.');
     if (cfg.opensAt) {
       const t = A.toDate(cfg.opensAt);
       if (t && Date.now() < t.getTime()) throw new Error('Round 2 submissions have not opened yet.');
@@ -127,7 +127,7 @@
 
     const existing = await getSubmission(user.uid);
     if (existing && existing.locked) {
-      throw new Error('Your submission is locked. Contact the organiser if you need it reopened.');
+      throw new Error('Your submission is locked. Contact the Al-Biruni\'s organising team if you need it reopened.');
     }
 
     const linkError = validateDriveUrl(data.driveUrl);
@@ -176,7 +176,7 @@
   }
 
   /* ---------------- no judging here ----------------
-     Round 2 submissions are judged off the platform. The organiser receives
+     Round 2 submissions are judged off the platform. The team receives
      the results by whatever route they use, then marks finalists in this
      panel and publishes the names. There is deliberately no score, no rubric
      and no per-judge record: storing numbers nobody reads would only risk
@@ -240,7 +240,7 @@
     await finalistRef(uid).set({ released: !!released, releasedAt: released ? A.server : null, updatedAt: A.server }, { merge: true });
   }
 
-  /* Confirm a named set of submissions as finalists. The organiser picks them
+  /* Confirm a named set of submissions as finalists. The team picks them
      from the results they were given off-platform, so there is no ranking to
      compute here and nothing is confirmed automatically. */
   async function confirmSelected(submissions, category) {

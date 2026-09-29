@@ -1,4 +1,4 @@
-/* Al-Biruni's Challenge 2026 — shared utilities
+/* Al-Biruni\'s Challenge 2026 — shared utilities
    No build step: this is plain ES5-compatible JavaScript with small helpers
    used across the public site, student portal and admin panel. */
 
