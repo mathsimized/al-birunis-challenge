@@ -100,7 +100,9 @@
           <div class="field span-2" id="f-ba">
             <label for="baCode">Brand Ambassador code</label>
             <input class="input" type="text" id="baCode" placeholder="e.g. BA-XXXXXX">
-            <div class="field-hint">If a Brand Ambassador referred you, enter their code so their registration is credited.</div>
+            <div class="field-hint">If a Brand Ambassador referred you, enter the code they
+              sent you. The organiser credits it for you — you do not need to do anything else, and
+              you will not be able to see or change the count.</div>
           </div>
         </div>
 
