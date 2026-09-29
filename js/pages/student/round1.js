@@ -62,74 +62,52 @@
     const canStart = av.code === 'open' && !done;
 
     stage.innerHTML = `
-      <div class="shell" style="padding:1.75rem 0 4rem">
-        <div class="portal">
-          <div class="portal-side" data-abc-portalnav></div>
-          <div class="portal-main">
-            <nav class="breadcrumb" aria-label="Breadcrumb">
-              <a href="../index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Round 1</span>
-            </nav>
-            <span class="eyebrow left">Round 1</span>
-            <h1>Rapid-Fire Online Qualifier</h1>
-            <p class="muted">A timed online mathematics quiz testing knowledge, number sense, speed and accuracy.</p>
-            <div style="margin:1.5rem 0">${notice}</div>
+      <div class="shell" style="padding:1.5rem 0 4rem">
+        <div class="game-stage">
+          <aside class="game-nav" data-abc-portalnav></aside>
 
-            <div class="grid" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:1.5rem;align-items:start">
-              <div class="stack">
-                <div class="card card-accent">
-                  <h2 style="font-size:1.25rem">Instructions</h2>
-                  <ol class="stack" style="padding-left:1.25rem;margin:1rem 0 0;font-size:.94rem">
-                    <li>Make sure you have a <strong>stable internet connection</strong> and a quiet moment before you begin.</li>
-                    <li>Press <strong>Start Round 1</strong> once, and only once. The timer starts immediately.</li>
-                    <li>You have <strong>one official attempt</strong>. Do not create a second account to try again.</li>
-                    <li>Your answers <strong>save automatically</strong>. You can move between questions freely.</li>
-                    <li>Your attempt <strong>submits automatically</strong> when the time limit expires, so do not close the tab while the timer is running.</li>
-                    <li>Correct answers are <strong>not shown</strong> during or after the attempt.</li>
-                    <li>Your result and rank appear in your portal once the <strong>organiser releases results</strong>.</li>
-                    <li>If a genuine technical fault interrupts you, <strong>contact the organiser</strong> — do not start again.</li>
-                  </ol>
-                </div>
-
-                <div class="card">
-                  <h2 style="font-size:1.25rem">Question types</h2>
-                  <ul class="stack small" style="padding-left:1.25rem;margin:1rem 0 0">
-                    <li><strong>Multiple choice</strong> — select one answer.</li>
-                    <li><strong>Multiple select</strong> — select every answer that applies.</li>
-                    <li><strong>Numeric</strong> — type a number only (no units or working).</li>
-                    <li><strong>Short answer</strong> — type a short response. Spelling and extra spaces are handled automatically.</li>
-                  </ul>
-                </div>
-              </div>
-
-              <aside class="stack">
-                <div class="card">
-                  <h3 style="font-size:1.05rem">Round 1 details</h3>
-                  <dl class="kv" style="margin-top:1rem">
-                    <dt>Category</dt><dd>${A.esc(A.repo.categoryLabel(A.session.SESSION.registration.category))}</dd>
-                    <dt>Questions</dt><dd>${quiz.questionCount ? A.esc(quiz.questionCount) : 'As configured by the organiser'}</dd>
-                    <dt>Time limit</dt><dd>${quiz.timeLimitMinutes ? A.esc(quiz.timeLimitMinutes) + ' minutes' : 'As configured by the organiser'}</dd>
-                    <dt>Window</dt><dd>${A.fmtTime ? A.esc(A.round1WindowLabel(quiz)) : ''}</dd>
-                    <dt>Attempts allowed</dt><dd>${quiz.oneAttemptPerStudent === false ? 'As configured' : 'One official attempt'}</dd>
-                    <dt>Resume</dt><dd>${quiz.allowResume === false ? 'Not allowed' : 'Allowed'}</dd>
-                  </dl>
-                </div>
-
-                ${canStart ? `
-                  <div class="card" style="border-color:var(--gold)">
-                    <h3 style="font-size:1.05rem">Ready?</h3>
-                    <p class="muted small">Once you start, the timer begins and your attempt is recorded as your official one.</p>
-                    <label class="checkline"><input type="checkbox" id="readyCheck"><label for="readyCheck">I have read the instructions and I am ready to begin.</label></label>
-                    <button class="btn btn-primary btn-lg btn-block" id="startBtn" disabled>Start Round 1</button>
-                  </div>
-                ` : ''}
-
-                <div class="card">
-                  <h3 style="font-size:1.05rem">Questions</h3>
-                  <p class="muted small" style="margin:0">The organiser adds and manages the question bank for this competition. Check the announcements page for the round brief.</p>
-                </div>
-              </aside>
+          <section class="game-panel">
+            <div class="game-intro">
+              <span class="eyebrow left">Round 1</span>
+              <h1>Rapid-Fire Online Qualifier</h1>
+              <p class="muted">A timed online mathematics quiz on number sense, speed and accuracy.</p>
             </div>
-          </div>
+
+            <div class="hud" style="margin:1.25rem 0">
+              <div class="hud-card">
+                <span class="hud-label">Questions</span>
+                <span class="hud-val">${A.esc(quiz.questionCount || '—')}</span>
+              </div>
+              <div class="hud-card">
+                <span class="hud-label">Time limit</span>
+                <span class="hud-val">${quiz.timeLimitMinutes ? A.esc(quiz.timeLimitMinutes) + 'm' : '—'}</span>
+              </div>
+              <div class="hud-card">
+                <span class="hud-label">Category</span>
+                <span class="hud-val" style="font-size:.95rem">${A.esc(A.repo.categoryLabel(A.session.SESSION.registration.category))}</span>
+              </div>
+              <div class="hud-card">
+                <span class="hud-label">Attempts</span>
+                <span class="hud-val">One</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom:1.25rem">${notice}</div>
+
+            ${canStart ? `
+              <div class="game-setup">
+                <ul class="game-rules small">
+                  <li>The timer starts the moment you press start, and cannot be paused.</li>
+                  <li>One official attempt. Do not make a second account.</li>
+                  <li>Answers save as you go. It submits itself when time runs out.</li>
+                  <li>Correct answers are never shown, during or after.</li>
+                </ul>
+                <label class="checkline"><input type="checkbox" id="readyCheck"><label for="readyCheck">I am ready to begin.</label></label>
+                <button class="btn btn-primary btn-lg btn-block" id="startBtn" disabled>▶ Start Round 1</button>
+                <p class="field-hint" style="margin:.65rem 0 0;text-align:center">Round 1 closes ${A.esc(A.fmtDateTime(quiz.closesAt))}.</p>
+              </div>` : `
+              <div class="game-setup"><p class="muted" style="margin:0">${notice ? 'The button appears here once Round 1 is open for your category.' : 'Check the announcements page for the opening date.'}</p></div>`}
+          </section>
         </div>
       </div>`;
 
@@ -168,21 +146,40 @@
 
     stage.innerHTML = `
       <div class="shell" style="padding:1.5rem 0 4rem">
-        <div class="quiz-shell">
-          <aside class="quiz-nav-panel">
-            <div class="panel">
-              <div class="panel-header">
-                <h2 style="font-size:1rem">Questions</h2>
-                <span class="badge badge-muted" data-answered-count>0 / ${total}</span>
+        <div class="game-stage game-stage-play">
+          <aside class="game-nav" data-abc-portalnav></aside>
+
+          <section class="game-panel">
+            <div class="hud">
+              <div class="hud-card hud-time">
+                <span class="hud-label">Time</span>
+                <span class="hud-val" data-quiz-timer>--:--</span>
               </div>
-              <div class="qindex" data-qindex></div>
-              <div class="panel-footer">
-                <button class="btn btn-primary btn-block" id="submitBtn">Submit attempt</button>
-                <p class="field-hint" style="margin:.65rem 0 0;text-align:center">You can submit at any time before the timer ends.</p>
+              <div class="hud-card">
+                <span class="hud-label">Question</span>
+                <span class="hud-val" data-progress-label style="font-size:1rem">1 of ${total}</span>
+              </div>
+              <div class="hud-card">
+                <span class="hud-label">Answered</span>
+                <span class="hud-val" data-answered-count>0</span>
+              </div>
+              <div class="hud-card">
+                <span class="hud-label">Saved</span>
+                <span class="hud-val" style="font-size:.95rem" data-save><span data-save-text>Saved</span></span>
               </div>
             </div>
-          </aside>
-          <div class="card quiz-card" data-question></div>
+
+            <div class="progress"><div class="progress-bar" data-progress-bar style="width:0%"></div></div>
+
+            <div class="card question-card" data-question></div>
+
+            <div class="qindex qindex-strip" data-qindex></div>
+
+            <div class="game-footer">
+              <button class="btn btn-secondary" id="submitBtn">Submit attempt</button>
+              <span class="field-hint">You can submit at any time before the timer ends.</span>
+            </div>
+          </section>
         </div>
       </div>`;
 
@@ -407,7 +404,7 @@
 
   /* ---------------- timer ---------------- */
   function startTimer() {
-    const el = document.querySelector('[data-timer]');
+    const el = document.querySelector('[data-quiz-timer]');
     if (!attempt.deadlineMs) {
       if (el) el.textContent = 'No limit';
       return;

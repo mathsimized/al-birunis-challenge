@@ -30,9 +30,10 @@
     return {
       id: 'round1',
       title: 'Round 1 — Rapid-Fire Online Qualifier',
-      /* window */
-      opensAt: null,
-      closesAt: null,
+      /* window — Round 1 is attempted on 1 Nov 2026, the same day students
+         register. The organiser can move these from the Round 1 settings. */
+      opensAt: '2026-11-01T09:00:00',
+      closesAt: '2026-11-01T23:59:00',
       /* paper */
       questionCount: null,          /* per attempt, admin-set */
       timeLimitMinutes: null,       /* admin-set */
@@ -52,7 +53,10 @@
       /* null until the organiser confirms the tie-break rule.
          'submission_time' | 'first_to_finish' | 'none' */
       tieBreak: null,
-      status: 'draft'                /* 'draft' | 'open' | 'closed' */
+      /* The window above is date-gated to 1 Nov, so this defaults to open and
+         the date does the work. Set it to 'closed' from the admin Round 1
+         settings to shut the round early. */
+      status: 'open'                 /* 'draft' | 'open' | 'closed' */
     };
   }
 
@@ -79,6 +83,7 @@
     const open = A.toDate(quiz.opensAt);
     const close = A.toDate(quiz.closesAt);
     if (quiz.status === 'draft') return { code: 'not-published', label: 'Not published yet' };
+    if (quiz.status === 'closed') return { code: 'closed', label: 'Closed' };
     if (open && t < open.getTime()) return { code: 'upcoming', label: 'Opens soon', opensAt: open };
     if (close && t > close.getTime()) return { code: 'closed', label: 'Closed', closesAt: close };
     return { code: 'open', label: 'Open now', opensAt: open, closesAt: close };

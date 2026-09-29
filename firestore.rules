@@ -74,59 +74,73 @@ service cloud.firestore {
     /* ######################################################################
      * MATHSIMIZED — DO NOT REMOVE
      *
-     * Copied verbatim from the live site's own firestore.rules. These are
-     * the collections the existing website depends on. They are listed
-     * before the competition rules on purpose: Firestore allows access if
-     * ANY matching rule allows it, so the existing site keeps working
-     * exactly as before.
+     * The live site's current ruleset, copied in exactly as it stands.
+     * Firebase has one ruleset per project and this project is shared, so
+     * deploying this file REPLACES these rules. Every line below is load-
+     * bearing for the existing website. Keep it in sync with the live file,
+     * and run the test suite after any change here.
      * ###################################################################### */
 
-    function isMathsimizedAdmin() {
+    function isAdminEmail() {
       return request.auth != null
         && request.auth.token.email == "mathsimized@gmail.com";
     }
 
     match /{document=**} {
-      allow read, write: if isMathsimizedAdmin();
+      allow read, write: if isAdminEmail();
     }
 
+    // Users - public read so username check works during signup
     match /users/{userId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
+    // Public read, admin-only write
     match /games/{document=**} {
       allow read: if true;
-      allow write: if isMathsimizedAdmin();
+      allow write: if isAdminEmail();
     }
     match /news/{document=**} {
       allow read: if true;
-      allow write: if isMathsimizedAdmin();
+      allow write: if isAdminEmail();
     }
     match /lectures/{document=**} {
       allow read: if true;
-      allow write: if isMathsimizedAdmin();
+      allow write: if isAdminEmail();
     }
     match /notes/{document=**} {
       allow read: if true;
-      allow write: if isMathsimizedAdmin();
+      allow write: if isAdminEmail();
     }
-    match /leaderboard/{docId} {
+    match /announcements/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null
-        && request.auth.uid == docId;
+      allow write: if isAdminEmail();
     }
-    match /scores/{docId} {
+    match /competitions/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null
-        && docId.startsWith(request.auth.uid + '_');
+      allow write: if isAdminEmail();
     }
+    match /resource_stats/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Scores - any logged in user can write
+    match /scores/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Leaderboard - any logged in user can write
+    match /leaderboard/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Auth-only collections
     match /chatRooms/{document=**} {
       allow read, write: if request.auth != null;
-    }
-    match /contact/{document} {
-      allow create: if true;
-      allow read, update, delete: if false;
     }
     match /presence/{document=**} {
       allow read, write: if request.auth != null;
@@ -137,6 +151,44 @@ service cloud.firestore {
     match /competition_participants/{document=**} {
       allow read, write: if request.auth != null;
     }
+    match /bookmarks/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /continue_learning/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /activity/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /downloads/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /recently_viewed/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /competition_registrations/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /achievements/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isAdminEmail();
+    }
+    match /notifications/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isAdminEmail();
+    }
+    match /feedback/{document=**} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isAdminEmail();
+    }
+
+    // Contact form - anyone can submit
+    match /contact/{document} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+
+    // Blocked
     match /test_collection/{document=**} {
       allow read, write: if false;
     }

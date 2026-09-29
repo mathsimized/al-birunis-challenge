@@ -1212,3 +1212,72 @@ tr.rank-2 .rank-cell, tr.rank-3 .rank-cell { color: var(--ink-2); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* ---------------------------------------------------------------------------
+   Round 1 game stage.
+   Laid out like the MATHSIMIZED games: a HUD strip of counters across the top,
+   one large question card in the middle, and the controls underneath. The
+   question navigator stays, because a 30-question paper is not playable
+   linearly, but it reads as a strip rather than a sidebar form.
+   --------------------------------------------------------------------------- */
+.game-stage {
+  display: grid; grid-template-columns: 250px minmax(0, 1fr);
+  gap: 1.5rem; align-items: start;
+}
+.game-nav { position: sticky; top: calc(var(--nav-h) + 74px); }
+.game-panel {
+  background: var(--ivory); border: 1px solid var(--line);
+  border-radius: var(--radius-md); padding: clamp(1.1rem, 2.4vw, 1.75rem);
+}
+.game-stage-play .game-nav { display: none; }
+.game-stage-play { grid-template-columns: minmax(0, 1fr); max-width: 860px; margin: 0 auto; }
+.game-intro h1 { margin: 0.15rem 0 0.3rem; }
+.game-intro p { margin: 0; }
+
+.hud { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; }
+.hud-card {
+  background: var(--burgundy); color: var(--ivory);
+  border: 1px solid rgba(216, 188, 126, 0.28); border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem; text-align: center; min-width: 0;
+}
+.hud-label {
+  display: block; font-size: 0.66rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--blush-soft);
+}
+.hud-val {
+  display: block; font-family: var(--mono); font-size: 1.3rem; font-weight: 500;
+  color: var(--gold-300); font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.hud-card.hud-time .hud-val { transition: color 0.3s var(--ease); }
+.hud-card.hud-time .hud-val.warn { color: #F0C36D; }
+.hud-card.hud-time .hud-val.critical { color: #F5B7B7; animation: pulse 1s var(--ease) infinite; }
+
+.progress { height: 4px; background: var(--line); border-radius: 999px; overflow: hidden; margin: 1rem 0; }
+.progress-bar { height: 100%; background: var(--gold); transition: width 0.3s var(--ease); }
+
+.question-card {
+  padding: clamp(1.35rem, 3vw, 2.1rem);
+  min-height: 260px; display: flex; flex-direction: column;
+}
+.game-setup {
+  background: var(--burgundy); color: var(--ivory);
+  border-radius: var(--radius-md); padding: clamp(1.1rem, 2.4vw, 1.6rem);
+}
+.game-setup .btn-primary { width: 100%; }
+.game-setup .field-hint { color: var(--blush-soft); }
+.game-rules { margin: 0 0 1.1rem; padding-left: 1.15rem; display: grid; gap: 0.4rem; color: var(--blush-soft); }
+.game-rules li::marker { color: var(--gold); }
+
+.qindex-strip { padding: 0; margin-top: 1rem; }
+.game-footer {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--line);
+}
+.game-footer .field-hint { margin: 0; }
+
+@media (max-width: 900px) {
+  .game-stage { grid-template-columns: minmax(0, 1fr); }
+  .game-nav { position: static; }
+  .hud { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

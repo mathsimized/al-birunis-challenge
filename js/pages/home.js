@@ -65,26 +65,41 @@
       ? 'Top ' + c.round2QualifyPerCategory + ' per category'
       : 'Top students per category';
 
-    /* Countdown: show the next upcoming milestone. */
+    /* Countdown: while registration is open, count down to it closing. The
+       opening date is only interesting before it opens — once it has, the
+       number students actually want is how long they have left to register. */
     const block = $('[data-countdown-block]');
     const label = $('[data-countdown-label]');
     const target = $('[data-countdown]');
     if (block && target) {
       const now = Date.now();
-      const milestones = [
-        { at: c.registrationOpensAt, label: 'Registration opens' },
-        { at: c.round1WindowOpensAt, label: 'Round 1 opens' },
-        { at: c.round1WindowClosesAt, label: 'Round 1 closes' },
-        { at: c.round2OpensAt, label: 'Round 2 opens' },
-        { at: c.round2ClosesAt, label: 'Round 2 closes' }
-      ].filter((m) => {
-        const t = A.toDate(m.at);
-        return t && t.getTime() > now;
-      }).sort((a, b) => A.toDate(a.at) - A.toDate(b.at));
-      if (milestones.length) {
+      const regOpen = A.toDate(c.registrationOpensAt);
+      const regClose = A.toDate(c.registrationClosesAt);
+      const registrationLive = regOpen && now >= regOpen.getTime() &&
+        (!regClose || now < regClose.getTime());
+
+      let next = null;
+      if (registrationLive && regClose && regClose.getTime() > now) {
+        next = { at: c.registrationClosesAt, label: 'Registration closes' };
+      } else {
+        const milestones = [
+          { at: c.registrationOpensAt, label: 'Registration opens' },
+          { at: c.registrationClosesAt, label: 'Registration closes' },
+          { at: c.round1WindowOpensAt, label: 'Round 1 opens' },
+          { at: c.round1WindowClosesAt, label: 'Round 1 closes' },
+          { at: c.round2OpensAt, label: 'Round 2 opens' },
+          { at: c.round2ClosesAt, label: 'Round 2 closes' }
+        ].filter((m) => {
+          const t = A.toDate(m.at);
+          return t && t.getTime() > now;
+        }).sort((a, b) => A.toDate(a.at) - A.toDate(b.at));
+        if (milestones.length) next = milestones[0];
+      }
+
+      if (next) {
         block.hidden = false;
-        label.textContent = milestones[0].label;
-        A.ui.countdown(target, milestones[0].at);
+        label.textContent = next.label;
+        A.ui.countdown(target, next.at);
       }
     }
   });

@@ -336,6 +336,50 @@ if (/bestBtn/.test(read('js/pages/admin/announcements.js'))) {
   else fail('username check: ' + label);
 });
 
+/* Registration runs through the whole of 1 Nov 2026 and is shut from 00:00 on
+   the 2nd. The timestamp encodes that; the copy has to match, because a
+   student told "closed on 1 Nov" would reasonably arrive on the 1st late. */
+[
+  ['registration runs to the end of 1 Nov 2026', /registrationClosesAt: '2026-11-01T23:59:00'/],
+  ['Round 1 is attempted the same day students register', /round1WindowOpensAt: '2026-11-01T09:00:00'/],
+  ['the Round 1 window shuts that night', /round1WindowClosesAt: '2026-11-01T23:59:00'/],
+  ['the closed notice does not claim it shut on the 1st', /closed at the end of <strong>/],
+  ['the open notice leads with the deadline, not the opening', /Register by <strong>/]
+].forEach(([label, re]) => {
+  const src = read('js/repo.js') + read('js/pages/student/registration.js');
+  if (re.test(src)) pass('registration window: ' + label);
+  else fail('registration window: ' + label);
+});
+
+/* Once registration opens, the countdown is the closing date. Showing
+   "Registration opens" to people who have already registered is noise. */
+if (/registrationLive[\s\S]{0,400}?label: 'Registration closes'/.test(read('js/pages/home.js'))) {
+  pass('countdown shows the registration deadline while it is open');
+} else {
+  fail('countdown shows the registration deadline while it is open');
+}
+
+/* Round 1 is a game, like Mathblitz and the rest: a HUD, one question card and
+   the navigator, not a multi-section form. */
+[
+  ['the play screen has a HUD', /class="hud"/],
+  ['the HUD carries the clock', /data-quiz-timer/],
+  ['the HUD carries the answered count', /data-answered-count/],
+  ['the HUD carries progress', /data-progress-bar/],
+  ['the clock is wired to the HUD tile', /querySelector\('\[data-quiz-timer\]'\)/],
+  ['there is a single question card', /class="card question-card"/],
+  ['one start button', /id="startBtn"[^>]*>▶ Start Round 1/]
+].forEach(([label, re]) => {
+  if (re.test(read('js/pages/student/round1.js'))) pass('round 1 game screen: ' + label);
+  else fail('round 1 game screen: ' + label);
+});
+
+if (/\.hud-card \{|\.game-panel \{|\.qindex-strip/.test(read('css/main.css'))) {
+  pass('round 1 game styles exist');
+} else {
+  fail('round 1 game styles exist');
+}
+
 if (/certificateAsset/.test(read('js/pages/student/certificates.js'))) {
   pass('certificates: the student portal opens whatever asset was attached');
 } else {

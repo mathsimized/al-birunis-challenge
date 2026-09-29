@@ -74,13 +74,16 @@
     grandFinaleDemoMinutes: 2,      /* confirmed: up to two minutes */
     finalistCount: 30,              /* confirmed: 30 national finalists */
     registrationOpensAt: '2026-10-01',   /* confirmed 1 Oct 2026 */
-    registrationClosesAt: null,         /* admin-set */
+    /* Registration stays open through the whole of 1 Nov 2026, so the final
+       timestamp is 23:59 on the 1st. From 00:00 on the 2nd it is shut. */
+    registrationClosesAt: '2026-11-01T23:59:00',
+    /* Round 1 is attempted on the same day students register, 1 Nov 2026. */
+    round1WindowOpensAt: '2026-11-01T09:00:00',
+    round1WindowClosesAt: '2026-11-01T23:59:00',
     baApplicationsOpenAt: '2026-09-20', /* confirmed: BA window, separate from registration */
     baApplicationsCloseAt: '2026-10-05',/* confirmed 5 Oct 2026 */
     round1QualifyPerCategory: null, /* intended 100 — admin-set */
     round2QualifyPerCategory: null, /* intended 10  — admin-set */
-    round1WindowOpensAt: null,
-    round1WindowClosesAt: null,
     round2OpensAt: null,
     round2ClosesAt: null,
     round2ResultsAt: null,

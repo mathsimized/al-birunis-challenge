@@ -32,10 +32,12 @@
     }
     if (close && now > close.getTime()) {
       return A.ui.alertBox('warn', 'Registration has closed',
-        'Registration closed on <strong>' + A.fmtDateTime(close) + '</strong>. If you believe you should have been registered, contact the organiser.');
+        'Registration closed at the end of <strong>' + A.fmtDate(close) + '</strong>. If you believe you should have been registered, contact the organiser.');
     }
+    /* Students care about the deadline, not when it opened, so lead with that. */
     return A.ui.alertBox('ok', 'Registration is open',
-      (open ? 'Opened ' + A.fmtDate(open) : '') + (close ? ' &middot; closes ' + A.fmtDateTime(close) : ''));
+      (close ? 'Register by <strong>' + A.fmtDate(close) + '</strong>' : '') +
+      (close ? ' &mdash; it shuts at midnight' : ''));
   }
 
   function render() {

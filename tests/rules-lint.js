@@ -44,7 +44,8 @@ const STORAGE_GONE = !fs.existsSync(path.join(ROOT, 'storage.rules'));
 const MATHSIMIZED_REQUIRED = [
   ['users are publicly readable (the username check queries this)', /match \/users\/\{userId\} \{\s*allow read: if true;/],
   ['users are writable by any signed-in user', /match \/users\/\{userId\} \{[\s\S]{0,120}?allow write: if request\.auth != null;/],
-  ['the admin catch-all', /match \/\{document=\*\*\} \{\s*allow read, write: if isMathsimizedAdmin\(\);/],
+  ['the admin catch-all', /match \/\{document=\*\*\} \{\s*allow read, write: if isAdminEmail\(\);/],
+  ['the organiser email behind it', /function isAdminEmail\(\)[\s\S]{0,120}?request\.auth\.token\.email == "mathsimized@gmail\.com"/],
   ['games', /match \/games\//],
   ['news', /match \/news\//],
   ['lectures', /match \/lectures\//],
@@ -52,6 +53,18 @@ const MATHSIMIZED_REQUIRED = [
   ['leaderboard', /match \/leaderboard\//],
   ['scores', /match \/scores\//],
   ['chatRooms', /match \/chatRooms\//],
+  ['announcements', /match \/announcements\//],
+  ['competitions', /match \/competitions\//],
+  ['resource_stats', /match \/resource_stats\//],
+  ['bookmarks', /match \/bookmarks\//],
+  ['continue_learning', /match \/continue_learning\//],
+  ['activity', /match \/activity\//],
+  ['downloads', /match \/downloads\//],
+  ['recently_viewed', /match \/recently_viewed\//],
+  ['competition_registrations', /match \/competition_registrations\//],
+  ['achievements', /match \/achievements\//],
+  ['notifications', /match \/notifications\//],
+  ['feedback', /match \/feedback\//],
   ['the contact form can be posted to', /match \/contact\//],
   ['presence', /match \/presence\//],
   ['password_resets', /match \/password_resets\//],
@@ -104,9 +117,13 @@ ruled.add('users');
 /* The MATHSIMIZED block is copied in from the live site's own rules, so those
    collections are ruled for on purpose: this file replaces the project's whole
    ruleset, and dropping them would break the existing website. */
-const MATHSIMIZED = new Set(['games', 'news', 'lectures', 'notes', 'leaderboard',
-  'scores', 'chatRooms', 'contact', 'presence', 'password_resets',
-  'competition_participants', 'test_collection', 'users']);
+const MATHSIMIZED = new Set(['games', 'news', 'lectures', 'notes',
+  'announcements', 'competitions', 'leaderboard', 'scores', 'chatRooms',
+  'contact', 'presence', 'password_resets', 'competition_participants',
+  'bookmarks', 'continue_learning', 'activity', 'downloads',
+  'recently_viewed', 'competition_registrations', 'achievements',
+  'notifications', 'feedback', 'resource_stats', 'test_collection',
+  'users']);
 
 const unruled = [...used].filter((c) => c && !ruled.has(c));
 if (unruled.length) {
