@@ -136,17 +136,23 @@
     clearTimeout(usernameTimer);
     var value = usernameInput.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
     if (value !== usernameInput.value) usernameInput.value = value;
-    usernameAvailable = false;
+    /* Three states, not two. `null` means the check could not run, which is
+       not the same as "taken" — treating it as taken told a student their
+       username was no good when in fact the database was unreachable. */
+    usernameAvailable = null;
     if (!value) { setUsernameState('Lowercase letters, numbers and underscores only.', ''); return; }
     if (value.length < 3) { setUsernameState('At least 3 characters.', 'bad'); return; }
     setUsernameState('Checking availability…', '');
     usernameTimer = setTimeout(function () {
       A.repo.isUsernameAvailable(value).then(function (res) {
         if (usernameInput.value !== value) return;
-        usernameAvailable = !!res.available;
-        setUsernameState(res.available ? 'Username available.' : (res.error || 'That username is taken.'),
-          res.available ? 'ok' : 'bad');
+        usernameAvailable = res.available;
+        if (res.code === 'free') setUsernameState('Username available.', 'ok');
+        else if (res.code === 'taken') setUsernameState('That username is already taken.', 'bad');
+        else setUsernameState(res.error || 'Could not check that username just now.', 'bad');
+        if (res.technical) console.warn('username check:', res.code, res.technical);
       }).catch(function () {
+        usernameAvailable = null;
         setUsernameState('Could not check that username. Try again in a moment.', 'bad');
       });
     }, 400);
@@ -156,8 +162,11 @@
     var ok = true;
     ok = markInvalid('f-username', !/^[a-z0-9_]{3,}$/.test($('#username').value)) && ok;
     if (!$('#username').value.trim()) { setUsernameState('Choose a username.', 'bad'); ok = false; }
-    if (!usernameAvailable && /^[a-z0-9_]{3,}$/.test($('#username').value)) {
-      setUsernameState('That username is not available.', 'bad');
+    /* Only a definite "taken" blocks. An unanswered check does not, because
+       the rules refuse the claim at signup if the name was taken after all —
+       this is a convenience check, not the guarantee. */
+    if (usernameAvailable === false && /^[a-z0-9_]{3,}$/.test($('#username').value)) {
+      setUsernameState('That username is already taken.', 'bad');
       ok = false;
     }
     ok = markInvalid('f-email', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('#email').value.trim())) && ok;

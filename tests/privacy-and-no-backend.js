@@ -351,12 +351,23 @@ if (/bestBtn/.test(read('js/pages/admin/announcements.js'))) {
 [
   ['the check reads a single document, not the user collection', /C\.usernames\)\.doc\(value\)\.get\(\)/],
   ['the name is normalised before it is used as a path', /function normaliseUsername/],
-  ['a failed check never reports the name as free', /catch \(e\) \{\s*return \{ available: false/],
+  ['a failed check never reports the name as free', /catch \(e\)[\s\S]{0,600}?available: null/],
+  ['a failed check is distinguished from a taken name', /code: 'taken'[\s\S]{0,900}?available: null/],
+  ['permission-denied is named as an undeployed ruleset', /rules-not-deployed/],
+  ['a missing database is named as such', /no-database/],
   ['signing up reserves the name, not just checks it', /await A\.repo\.reserveUsername\(cred\.user\.uid, value\)/],
   ['a half-made account is rolled back', /await cred\.user\.delete\(\)/]
 ].forEach(([label, re]) => {
   const src = read('js/repo.js') + read('js/session.js');
   if (re.test(src)) pass('username check: ' + label);
+  else fail('username check: ' + label);
+});
+
+[
+  ['only a definite "taken" blocks the form', /usernameAvailable === false/],
+  ['an unanswered check does not block the form', /usernameAvailable = null/]
+].forEach(([label, re]) => {
+  if (re.test(read('register.html'))) pass('username check: ' + label);
   else fail('username check: ' + label);
 });
 

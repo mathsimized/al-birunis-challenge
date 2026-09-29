@@ -127,20 +127,48 @@
   }
 
   /* One document per username, addressed by the name itself, so this is a
-     point read rather than a query and the answer is exact. */
+     point read rather than a query and the answer is exact.
+
+     Three outcomes, not two. "Taken" and "free" are answers. A failure to ask
+     the question is neither, and it is reported separately, because it means
+     something is broken rather than that the name is no good. Collapsing it
+     into "not available" — which is what this did — is how a misconfigured
+     database ends up looking like a full room of taken usernames.
+
+     `unknown` does not block signup. The pre-check is only a convenience so
+     the student finds out early; the authoritative guard is the write in
+     reserveUsername, which the rules refuse if the name is gone. Letting
+     someone through a broken check costs nothing and keeps a Firestore
+     outage from stopping registration outright. */
   async function isUsernameAvailable(username) {
     const value = normaliseUsername(username);
-    if (!value) return { available: false, error: 'A username is required.' };
-    if (value.length < 3) return { available: false, error: 'Usernames are at least 3 characters.' };
-    if (value.length > 24) return { available: false, error: 'Usernames are at most 24 characters.' };
-    if (!/^[a-z0-9_]+$/.test(value)) return { available: false, error: 'Only lowercase letters, numbers and underscores.' };
+    if (!value) return { available: false, error: 'A username is required.', code: 'invalid' };
+    if (value.length < 3) return { available: false, error: 'Usernames are at least 3 characters.', code: 'invalid' };
+    if (value.length > 24) return { available: false, error: 'Usernames are at most 24 characters.', code: 'invalid' };
+    if (!/^[a-z0-9_]+$/.test(value)) return { available: false, error: 'Only lowercase letters, numbers and underscores.', code: 'invalid' };
     try {
       const snap = await db().collection(C.usernames).doc(value).get();
       return snap.exists
-        ? { available: false, error: 'That username is already taken.' }
-        : { available: true, error: null };
+        ? { available: false, error: 'That username is already taken.', code: 'taken' }
+        : { available: true, error: null, code: 'free' };
     } catch (e) {
-      return { available: false, error: 'Could not check that username. Please try again.' };
+      /* The two causes worth telling apart: the rules have not been deployed
+         (everything denied), or the database has not been created at all. */
+      const msg = String((e && e.message) || e || '');
+      let code = 'unavailable';
+      if (/permission-denied|insufficient permissions/i.test(msg)) code = 'rules-not-deployed';
+      else if (/not[- ]found|failed-precondition|does not exist|no such/i.test(msg)) code = 'no-database';
+      else if (/unavailable|deadline-exceeded|network/i.test(msg)) code = 'offline';
+      return {
+        available: null,          /* unknown — not "no" */
+        code: code,
+        error: code === 'rules-not-deployed'
+          ? 'Cannot reach the username list. The database rules for this project have not been deployed yet.'
+          : code === 'no-database'
+            ? 'Cannot reach the username list. No database has been created for this project yet.'
+            : 'Could not check that username just now.',
+        technical: msg
+      };
     }
   }
 
