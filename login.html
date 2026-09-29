@@ -131,6 +131,13 @@
     });
   }
 
+  /* First sign-in after creating the account this panel belongs to. */
+  if (/[?&]setup=1/.test(location.search)) {
+    errBox.innerHTML = ABC.ui.alertBox('ok', 'Account created',
+      'Almost there. Open the verification link we sent to your address, then sign in below. '
+      + 'That link is what tells the security rules who you are, so the panel opens as soon as you have used it.');
+  }
+
   /* If already signed in, skip the form. */
   ABC.READY.then(function (user) { if (user) go(user); });
 

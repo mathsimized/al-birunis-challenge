@@ -455,8 +455,19 @@ if (/\{ href: 'student\/dashboard\.html', label: 'My Student Portal'/.test(read(
    as the team instead: "we" for actions, "the Al-Biruni's organising team" for
    a name, and "the judges" only where judging is genuinely meant. */
 {
-  const offenders = (appCopy.match(/[^\w'](?:the )?[Oo]rganiser/g) || []).length;
-  if (offenders) fail('voice: no "organiser" in anything a visitor reads (' + offenders + ' left)');
+  /* Only rendered copy matters. Comments are internal notes, where
+     "organiser" is the accurate word and changing it would make the code read
+     worse for no benefit. Block comments are removed whole, and line comments
+     are cut where `//` is not part of a scheme, so URLs survive. */
+  const visible = appCopy
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1')
+    .replace(/<!--[\s\S]*?-->/g, ' ');
+  const offenders = (visible.match(/[^\w'](?:the )?[Oo]rganiser/g) || []).length;
+  if (offenders) {
+    const sample = (visible.match(/[^\n]{0,60}[^\w'](?:the )?[Oo]rganiser[^\n]{0,40}/g) || []).slice(0, 3);
+    fail('voice: no "organiser" in anything a visitor reads (' + offenders + ' left, e.g. ' + sample.join(' | ') + ')');
+  }
   else pass('voice: no "organiser" in anything a visitor reads');
 }
 
@@ -506,6 +517,35 @@ if (/\{ href: 'student\/dashboard\.html', label: 'My Student Portal'/.test(read(
 ].forEach(([label, re]) => {
   if (re.test(read('js/pages/admin/round1.js'))) pass('auto-scoring: ' + label);
   else fail('auto-scoring: ' + label);
+});
+
+/* Admin access is decided by request.auth.token.email, and Firebase leaves
+   the email claim out of the ID token until the address is verified. An
+   organiser who signs up and never clicks the link is therefore refused by
+   the rules while their browser still thinks they are an admin, which is a
+   dead end with a misleading message. Every step of that is asserted. */
+[
+  ['signup sends the verification email', /await cred\.user\.sendEmailVerification\(\)/],
+  ['a failure to send it does not abort signup', /catch \(err\) \{ \/\* not fatal \*\/ \}/],
+  ['an unconfirmed organiser account is a distinct state', /function isUnverifiedAdmin\(\)[\s\S]{0,300}?emailVerified/],
+  ['it is not treated as a denial', /showUnverified/],
+  ['the page names the action and the address', /Confirm <strong>\$\{A\.esc\(email\)\}<\/strong>[\s\S]{0,160}?verification link to that address\. Open it, then sign in again/],
+  ['and offers to send it again', /resendVerification/],
+  ['the bounce only happens for accounts that are neither', /!R\.isAdmin\(rec\) && !isUnverifiedAdmin\(\)/]
+].forEach(([label, re]) => {
+  const src = read('js/session.js') + read('js/admin.js');
+  if (re.test(src)) pass('email verification: ' + label);
+  else fail('email verification: ' + label);
+});
+
+/* The verification link lives in a Firebase-hosted domain, so that domain has
+   to be on the authorised list or the link bounces and the account can never
+   become an admin. Recorded here because it is a console setting, not code. */
+[
+  ['the project is named in the README, where the console steps are', /al-birunis-challenge\.firebaseapp\.com/]
+].forEach(([label, re]) => {
+  if (re.test(read('js/firebase-config.js'))) pass('email verification: ' + label);
+  else fail('email verification: ' + label);
 });
 
 if (/certificateAsset/.test(read('js/pages/student/certificates.js'))) {

@@ -187,11 +187,44 @@ rewrite.
 
 ## 5. Setup
 
+### One-time, in the Firebase console
+
+1. **Firestore Database** → create, in production mode.
+2. **Authentication → Sign-in method** → enable **Email/Password**.
+3. **Authentication → Settings → Authorised domains** → add
+   `mathsimized.github.io` and `localhost`.
+
+Then deploy the rules, which is the only thing in this project that cannot be
+done from a browser:
+
 ```bash
-# 1. install the CLI once
+firebase deploy --only firestore:rules
+```
+
+### The admin account
+
+Create it **once**, from `/register.html`, using `mathsimized@gmail.com` and any
+username and password. Nothing else in the project is special-cased for it.
+
+Then **open the verification email and click the link**. This is not optional
+housekeeping: admin access is granted by `request.auth.token.email`, and Firebase
+leaves the email claim out of the ID token until the address is verified. An
+unverified organiser account is refused by the rules while the browser still
+considers it an admin, so the panel would show "access denied" with no obvious
+cause. The panel detects this case and says so, with a button to resend the
+email.
+
+Verification is sent to every new account but is not enforced for students. It
+is what makes it impossible for anyone to claim this access by typing the
+address, so it should stay on.
+
+### The CLI
+
+```bash
+# install once
 npm install -g firebase-tools
 
-# 2. sign in and select the project
+# sign in and select the project
 firebase login
 firebase use al-birunis-challenge
 ```

@@ -179,7 +179,16 @@
        full name, category, school — are filled in on the portal straight
        after, and that is where we need them. */
     A.session.signUp($('#email').value.trim(), $('#password').value, $('#username').value.trim())
-      .then(function () {
+      .then(function (user) {
+        /* The organiser is not a competitor, so do not send them through the
+           competition registration form. This is presentation, not security:
+           the rules grant admin from a verified email token, so an unverified
+           account on this address gains nothing here. */
+        var isAdmin = (user.email || '').toLowerCase() === String(ABC.ADMIN_EMAIL || '').toLowerCase();
+        if (isAdmin) {
+          A.redirect('login.html?setup=1');
+          return;
+        }
         A.ui.toast('Account created. One more step: tell us about yourself.', 'ok');
         A.redirect('student/registration.html?required=1&welcome=1');
       })

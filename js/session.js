@@ -114,6 +114,13 @@
       await A.repo.reserveUsername(cred.user.uid, value);
       await A.repo.createUser(cred.user, value);
       try { await cred.user.updateProfile({ displayName: value }); } catch (err) { /* not fatal */ }
+      /* Send the verification email. It is not enforced for students, but
+         the rules grant admin from request.auth.token.email, and Firebase
+         leaves the email claim out of the ID token until the address is
+         verified. Without this the organiser account is created but can never
+         be recognised as an admin, and the panel refuses it with a message
+         that gives no clue why. */
+      try { await cred.user.sendEmailVerification(); } catch (err) { /* not fatal */ }
     } catch (err) {
       /* Roll the login back so a half-made account cannot linger. */
       try { await cred.user.delete(); } catch (e) { /* nothing more we can do */ }
@@ -126,6 +133,26 @@
 
   async function sendReset(email) {
     await A.auth.sendPasswordResetEmail(email);
+  }
+
+  /* Re-send the verification email. Needed after the first one, and after any
+     address change. */
+  async function resendVerification() {
+    const user = A.user;
+    if (!user) throw new Error('You are not signed in.');
+    if (user.emailVerified) return { alreadyVerified: true };
+    await user.sendEmailVerification();
+    return { alreadyVerified: false };
+  }
+
+  /* True when this account is the organiser's but has not been confirmed yet.
+     A distinct state from "not an admin", because the fix is different: this
+     one clears by checking an inbox. */
+  function isUnverifiedAdmin() {
+    const user = A.user;
+    if (!user || user.emailVerified) return false;
+    const email = (user.email || '').toLowerCase();
+    return email === String(A.ADMIN_EMAIL || '').toLowerCase();
   }
 
   async function signOut() {
@@ -152,7 +179,9 @@
 
     if (isAdminRoute(route)) {
       const rec = await R.ensureUser(user);
-      if (!R.isAdmin(rec)) {
+      /* Let the admin page render its own explanation for an unconfirmed
+         organiser address, rather than bouncing to the portal from here. */
+      if (!R.isAdmin(rec) && !isUnverifiedAdmin()) {
         /* Nobody should ever see this: the guard on every admin page is an
            email comparison, and only one address matches. It stays in place
            so a future third-party account cannot reach the panel by guessing
@@ -209,6 +238,7 @@
   }
 
   A.session = {
+    resendVerification, isUnverifiedAdmin,
     SESSION, PORTAL_ROUTES, ADMIN_ROUTES, currentRoute, isPortalRoute, isAdminRoute,
     boot, refresh, signIn, signUp, sendReset, signOut, ctx,
     isRegistered, isQualifiedRound2, studentName, category

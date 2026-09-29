@@ -18,8 +18,16 @@
       route: opts.route,
       requireAuth: true,
       onReady: async function (S) {
+        /* Checked before isAdmin, because isAdmin also matches the address
+           locally while the rules cannot see it until the address is
+           confirmed. Without this the organiser sees "access denied" for a
+           problem that a forwarded email fixes. */
+        if (A.session.isUnverifiedAdmin()) {
+          showUnverified(A.user.email);
+          return;
+        }
         if (!A.repo.isAdmin(S.record)) {
-          showDenied('This area is restricted to competition administrators.');
+          showDenied('This account does not have access to the panel.');
           return;
         }
         const who = document.querySelector('[data-abc-admindoctorial]');
@@ -37,6 +45,39 @@
       <div class="alert alert-danger"><div><strong>Access denied</strong>${A.esc(message)}</div></div>
       <div class="btn-row" style="margin-top:1.25rem"><a class="btn btn-outline" href="${A.rootPath('index.html')}">Back to the public site</a></div>
     </div>`;
+  }
+
+  /* This account is the organiser's, but the address has not been confirmed,
+     so Firebase has not put an email claim in the ID token and the rules will
+     not treat it as an admin. It is not a denial of permission, it is one
+     click of an email short of done — so it is presented as such, with a way
+     to send the message again, rather than as "access denied". */
+  function showUnverified(email) {
+    const main = document.querySelector('.admin-main');
+    if (!main) return;
+    main.innerHTML = `<div class="shell" style="padding:4rem 0;max-width:620px">
+      <div class="alert alert-warn">
+        <div><strong>One step left</strong>
+        Confirm <strong>${A.esc(email)}</strong> and this account opens the panel straight away.
+        We have sent a verification link to that address. Open it, then sign in again.</div>
+      </div>
+      <p class="field-hint" style="margin:1rem 0 0">Nothing is wrong with this account. Until the address is confirmed the security rules cannot see who you are, so they refuse the panel. That is deliberate &mdash; it is what stops anyone else claiming this access by typing the address.</p>
+      <div class="btn-row" style="margin-top:1.25rem">
+        <button class="btn btn-primary" id="resendBtn">Send the email again</button>
+        <a class="btn btn-outline" href="${A.rootPath('index.html')}">Back to the public site</a>
+      </div>
+    </div>`;
+    const btn = document.getElementById('resendBtn');
+    if (btn) btn.addEventListener('click', function () {
+      A.ui.setBusy(btn, true, 'Sending…');
+      A.session.resendVerification()
+        .then(function (r) {
+          if (r.alreadyVerified) { A.ui.toast('Already verified. Reload the page.', 'ok'); A.ui.setBusy(btn, false); return; }
+          A.ui.toast('Verification email sent. Check your inbox.', 'ok');
+          A.ui.setBusy(btn, false);
+        })
+        .catch(function (e) { A.ui.toast(e.message || 'Could not send the email.', 'error'); A.ui.setBusy(btn, false); });
+    });
   }
 
   /* ---------------- table helper ---------------- */
