@@ -194,12 +194,23 @@ rewrite.
 3. **Authentication → Settings → Authorised domains** → add
    `mathsimized.github.io` and `localhost`.
 
-Then deploy the rules, which is the only thing in this project that cannot be
-done from a browser:
+Then deploy the rules. This is the only step that needs the CLI, and if you
+would rather not install anything you can paste the file into the console
+instead — it is a self-contained ruleset, so the console editor accepts it as
+is:
 
 ```bash
 firebase deploy --only firestore:rules
 ```
+
+**Without the CLI.** Console → **Firestore Database → Rules**, select
+everything in the editor, paste the whole of `firestore.rules`, and press
+**Publish**. The console compiles before it accepts, so a syntax error is
+reported rather than stored.
+
+This file is the *only* ruleset in the `al-birunis-challenge` project and it
+covers only the `abc_*` collections plus `usernames`. It does not affect
+MATHSIMIZED, which is a separate Firebase project with its own rules.
 
 ### The admin account
 

@@ -38,11 +38,18 @@ const STORAGE_GONE = !fs.existsSync(path.join(ROOT, 'storage.rules'));
     : fail(name + ': parentheses balance');
 });
 
-/* This is now the competition's own Firebase project. The MATHSIMIZED ruleset
+/* This is now the competition's own Firebase project. The other site's ruleset
    that used to be carried over verbatim is gone, along with the reason it had
    to be: there is no shared project left to break. The checks below replace the
-   28 preservation assertions with the things that matter now. */
+   preservation assertions with the things that matter now. */
 const SPLIT_REQUIRED = [
+  /* The file's own header, which is what a person reads before deciding
+     whether it is safe to paste into the console. It used to assert that
+     deploying this file would replace another live site — true when the two
+     shared a project, and dangerously wrong now. A comment is not enforced at
+     runtime, so only a test catches it going stale. */
+  ['the header names this project', /Target project: al-birunis-challenge/],
+
   ['the admin is identified by the verified email', /function isOrganiser\(\)[\s\S]{0,160}?request\.auth\.token\.email == 'mathsimized@gmail\.com'/],
   ['the organiser can bootstrap their own admin record', /isOrganiser\(\)\s*\?\s*request\.resource\.data\.role == 'admin'/],
 
@@ -115,21 +122,21 @@ while ((m = literalRe.exec(code))) used.add(m[1]);
 const ruleRe = /match \/([a-z0-9_]+)\/\{/g;
 const ruled = new Set();
 while ((m = ruleRe.exec(rules))) ruled.add(m[1]);
-/* The service line matches /databases/, and the shared MATHSIMIZED profile is
-   matched as `users`. */
+/* The service line matches /databases/, which is not a collection. */
 ruled.delete('databases');
-ruled.add('users');
 
-/* The MATHSIMIZED block is copied in from the live site's own rules, so those
-   collections are ruled for on purpose: this file replaces the project's whole
-   ruleset, and dropping them would break the existing website. */
-const MATHSIMIZED = new Set(['games', 'news', 'lectures', 'notes',
-  'announcements', 'competitions', 'leaderboard', 'scores', 'chatRooms',
-  'contact', 'presence', 'password_resets', 'competition_participants',
-  'bookmarks', 'continue_learning', 'activity', 'downloads',
-  'recently_viewed', 'competition_registrations', 'achievements',
-  'notifications', 'feedback', 'resource_stats', 'test_collection',
-  'users']);
+/* Nothing outside abc_* and usernames belongs to this project. When this file
+   still carried the other site's collections they were allow-listed here, so
+   re-merging the two projects could not fail a test. That tolerance is the
+   bug: a rule for a collection this project does not own can only be dead
+   weight, or a copy-paste from a different project. */
+const ours = new Set(['usernames']);
+const foreign = [...ruled].filter((c) => !ours.has(c) && !c.startsWith('abc_'));
+if (foreign.length) {
+  fail('split: no rule for a collection this project does not own', foreign.join(', '));
+} else {
+  pass('split: no rule for a collection this project does not own');
+}
 
 const unruled = [...used].filter((c) => c && !ruled.has(c));
 if (unruled.length) {
@@ -139,11 +146,22 @@ if (unruled.length) {
   pass('every collection used in code has a rule (' + used.size + ' collections)');
 }
 
-const unused = [...ruled].filter((c) => !used.has(c) && !MATHSIMIZED.has(c));
+const unused = [...ruled].filter((c) => !used.has(c));
 if (unused.length) {
   fail('no orphaned rules for collections the code no longer uses', unused.join(', '));
 } else {
   pass('no orphaned rules for collections the code no longer uses');
+}
+
+/* The header is the part a person reads before deciding this file is safe to
+   paste into the console, so a stale claim in it is worth a test of its own. */
+{
+  const header = rules.slice(0, rules.indexOf('service cloud.firestore'));
+  if (/DO NOT REMOVE|would REPLACE the rules|shares the .*project/.test(header)) {
+    fail('split: the header does not claim to break another site');
+  } else {
+    pass('split: the header does not claim to break another site');
+  }
 }
 
 /* ---------- helper functions are defined before use ---------- */

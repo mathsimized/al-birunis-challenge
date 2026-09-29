@@ -2,21 +2,10 @@ rules_version = '2';
 
 /* Al-Biruni's Challenge 2026 — Firestore rules.
  *
- * ############################################################################
- * # THIS FILE IS THE WHOLE PROJECT'S RULES, NOT JUST OURS.                #
- * #                                                                        #
- * # Firebase has exactly one security ruleset per project, and this        #
- * # competition shares the MATHSIMIZED project so that a student keeps    #
- * # one login. Deploying this file therefore REPLACES the rules that run   #
- * # the existing MATHSIMIZED site. Everything that site needs is carried   #
- * # over verbatim below, under "MATHSIMIZED — DO NOT REMOVE".             #
- * #                                                                        #
- * # If a rule for a MATHSIMIZED collection is ever dropped from this file, #
- * # that part of the live site breaks: games, news, lectures, notes, the  #
- * # leaderboard, scores, chat, the contact form, presence, password        #
- * # resets, or the public read of `users` that the username-uniqueness     #
- * # check depends on.                                                      #
- * ############################################################################
+ * Target project: al-birunis-challenge. This is the ONLY ruleset in that
+ * project, and it covers only the abc_* collections plus `usernames`. It does
+ * not touch the MATHSIMIZED project, which has its own separate ruleset; this
+ * file used to be merged with that one, and the two concerns are now separate.
  *
  * Security model for the competition
  *   public   : published configuration, published announcements, public
@@ -239,7 +228,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    /* ---------------- judges ---------------- */
     /* ---------------- certificates ---------------- */
     match /abc_certificates/{certificateId} {
       allow read: if isSelf(resource.data.uid) || isAdmin();
