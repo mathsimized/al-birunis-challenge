@@ -286,9 +286,31 @@ the new collections are never briefly unguarded.
 
 ## 7. Running the competition
 
-1. **Settings** — set the registration window, Round 1 window, quotas, Round 2
-   rubric and Grand Finale details. Anything left blank simply stays
-   unannounced; nothing is assumed.
+### The schedule
+
+These dates are final and live in the config, so every countdown and notice on
+the site reads from them:
+
+| Date | What |
+| --- | --- |
+| 5 October 2026 | Registration opens; Brand Ambassador applications close |
+| 7 November 2026 | Round 1, open 00:00–23:59. Registration also shuts at 23:59 |
+| 8 November 2026 | Round 1 results released; qualified students informed |
+| 10 November 2026 | Round 2 opens |
+| 10–18 November 2026 | Round 2 preparation and submissions |
+| 18 November 2026 | Round 2 submission deadline |
+| 24 November 2026 | 30 national finalists announced |
+| 29 November 2026 | Grand Finale, Karachi |
+
+Registration and Round 1 share a closing moment on purpose: a student who
+registers on the morning of the 7th can go straight into Round 1 that
+afternoon. The length of a *single attempt* is a separate setting,
+`timeLimitMinutes`, and is deliberately not assumed here.
+
+### The order of operations
+
+1. **Settings** — set the registration window, quotas and the remaining fixed
+   dates. Anything left blank simply stays unannounced; nothing is assumed.
 2. **Questions** — build the bank, or import a CSV. Every row is validated
    before it is written, and a correct answer is mandatory.
 3. **Round 1** — set the status to open when you are ready. Students build
@@ -307,7 +329,8 @@ the new collections are never briefly unguarded.
 
 Applications are made on a Google Form, not on this site:
 <https://forms.gle/QvNTaC4cwCdNzzzR7>. The window is **20 September 2026** to
-**5 October 2026**, which is separate from competition registration on 1 October.
+**5 October 2026**, which is separate from competition registration, which opens
+the same day.
 
 1. **Brand Ambassadors** — add applicants from the form's response sheet. One
    at a time with **Add applicant**, or select the rows in the sheet, copy, and

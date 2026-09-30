@@ -25,15 +25,20 @@
       brief: 'Create a presentation using the official Mathsimized PowerPoint template that explains a mathematical idea clearly and originally. You may include a recording of you presenting.',
       templateUrl: '',
       templateNote: '',
-      opensAt: null,
-      closesAt: null,
-      resultsAt: null,
+      /* Nine days, 10 to 18 Nov 2026. resultsAt is when the finalists are
+         named, on the 24th, which is also the Round 1 results having come out
+         a fortnight earlier. */
+      opensAt: '2026-11-10T00:00:00',
+      closesAt: '2026-11-18T23:59:00',
+      resultsAt: '2026-11-24',
       instructions: '',
       /* Judging happens off the platform, so there is no rubric and no
          weighting here. What is recorded is whether the team has
          published the names, which is what students are allowed to see. */
       resultsReleasedToStudents: false,
-      status: 'draft'
+      /* 'draft' used to gate this closed regardless of the window. The dates
+         are final now, so the window above is what decides. */
+      status: 'open'
     };
   }
 
@@ -41,7 +46,7 @@
     return {
       city: 'Karachi',            /* confirmed */
       month: 'November 2026',     /* confirmed */
-      date: null,
+      date: '2026-11-29',          /* confirmed 29 Nov 2026; venue still TBA */
       venue: '',
       reportingTime: '',
       demoMinutes: 2,             /* confirmed: up to two minutes */

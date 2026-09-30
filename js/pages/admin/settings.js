@@ -107,6 +107,13 @@
         ${date('baApplicationsOpenAt', 'Brand Ambassador registration opens', cfg.baApplicationsOpenAt)}
         ${date('baApplicationsCloseAt', 'Brand Ambassador applications close', cfg.baApplicationsCloseAt)}
       </div>
+      <h3 style="font-size:1.05rem;margin-top:1.5rem">Rest of the timeline</h3>
+      <p class="small muted">Round 1 and Round 2 windows are set on their own pages. These are the
+      remaining fixed dates, kept here so the whole schedule can be read in one place.</p>
+      <div class="form-grid">
+        ${date('round1ResultsAt', 'Round 1 results released', cfg.round1ResultsAt)}
+        ${date('finalistsAnnouncedAt', '30 finalists announced', cfg.finalistsAnnouncedAt)}
+      </div>
       <h3 style="font-size:1.05rem;margin-top:1.5rem">Qualification quotas</h3>
       <p class="small muted">Leave empty if qualification is decided manually. A quota of 0 qualifies nobody automatically.</p>
       <div class="form-grid">
@@ -242,6 +249,7 @@
       return A.repo.saveConfig({
         registrationOpensAt: d('registrationOpensAt'), registrationClosesAt: d('registrationClosesAt'),
         baApplicationsOpenAt: v('baApplicationsOpenAt') || null, baApplicationsCloseAt: v('baApplicationsCloseAt') || null,
+        round1ResultsAt: v('round1ResultsAt') || null, finalistsAnnouncedAt: v('finalistsAnnouncedAt') || null,
         round1QualifyPerCategory: n('round1QualifyPerCategory'),
         round2QualifyPerCategory: n('round2QualifyPerCategory')
       }).then(() => 'Windows and quotas saved.');

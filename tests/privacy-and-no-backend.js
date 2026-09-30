@@ -12,6 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 let failures = 0;
@@ -377,20 +378,102 @@ if (!/C\.users\)\s*\.where|\.collection\(C\.users\)[\s\S]{0,40}?\.where/.test(re
   fail('username check: the user collection is never queried to test a name');
 }
 
-/* Registration runs through the whole of 1 Nov 2026 and is shut from 00:00 on
-   the 2nd. The timestamp encodes that; the copy has to match, because a
-   student told "closed on 1 Nov" would reasonably arrive on the 1st late. */
+/* The finalized timeline, asserted against the config that drives the portal,
+   the registration page, the round pages and every countdown on the site.
+   Registration and Round 1 shut at the same moment on 7 Nov, so a student who
+   registers that morning can still sit the qualifier that afternoon. */
 [
-  ['registration runs to the end of 1 Nov 2026', /registrationClosesAt: '2026-11-01T23:59:00'/],
-  ['Round 1 is attempted the same day students register', /round1WindowOpensAt: '2026-11-01T09:00:00'/],
-  ['the Round 1 window shuts that night', /round1WindowClosesAt: '2026-11-01T23:59:00'/],
-  ['the closed notice does not claim it shut on the 1st', /closed at the end of <strong>/],
+  ['registration opens on 5 October', /registrationOpensAt: '2026-10-05'/],
+  ['registration runs to the end of 7 November', /registrationClosesAt: '2026-11-07T23:59:00'/],
+  ['Round 1 opens at midnight on the 7th, not a morning slot', /round1WindowOpensAt: '2026-11-07T00:00:00'/],
+  ['Round 1 shuts that night', /round1WindowClosesAt: '2026-11-07T23:59:00'/],
+  ['Round 1 results are released on the 8th', /round1ResultsAt: '2026-11-08'/],
+  ['Round 2 opens on the 10th', /round2OpensAt: '2026-11-10T00:00:00'/],
+  ['Round 2 submissions close on the 18th', /round2ClosesAt: '2026-11-18T23:59:00'/],
+  ['the finalists are announced on the 24th', /finalistsAnnouncedAt: '2026-11-24'/],
+  ['the Grand Finale is on the 29th', /grandFinaleDate: '2026-11-29'/],
+  ['Brand Ambassador applications still close on 5 October', /baApplicationsCloseAt: '2026-10-05'/],
+  ['the closed notice does not claim it shut on the 7th', /closed at the end of <strong>/],
   ['the open notice leads with the deadline, not the opening', /Register by <strong>/]
 ].forEach(([label, re]) => {
   const src = read('js/repo.js') + read('js/pages/student/registration.js');
-  if (re.test(src)) pass('registration window: ' + label);
-  else fail('registration window: ' + label);
+  if (re.test(src)) pass('timeline: ' + label);
+  else fail('timeline: ' + label);
 });
+
+/* Round 1's window is a whole day. The length of one attempt is a separate
+   setting and was explicitly not part of this change, so it must still be
+   unset rather than quietly picking up a value. */
+{
+  const quiz = read('js/round1.js');
+  const dur = quiz.match(/timeLimitMinutes:\s*([^,]*),/);
+  if (dur && dur[1].trim() === 'null') {
+    pass('timeline: the individual attempt duration is left unset, as instructed');
+  } else {
+    fail('timeline: the individual attempt duration is left unset, as instructed',
+      dur ? 'timeLimitMinutes is ' + dur[1].trim() : 'not found');
+  }
+}
+
+/* A window inside one calendar day must not print the date twice. Round 1 opens
+   at midnight and shuts at midnight, both on the 7th. */
+if (/function fmtWindow\([\s\S]{0,600}?sameDay/.test(read('js/core.js'))) {
+  pass('timeline: a single-day window prints the day once, with its hours');
+} else {
+  fail('timeline: a single-day window prints the day once, with its hours');
+}
+
+/* A bare date is read by the platform as UTC midnight, which is the previous
+   day for anyone west of Greenwich — so "2026-11-29" was showing the Grand
+   Finale as the 28th in New York. A date on the schedule is a calendar day, not
+   an instant, and must read as the same day everywhere.
+
+   This has to run the check in another timezone. The machine doing the testing
+   is in Asia/Karachi, where the wrong answer and the right answer are the same,
+   so a test here would pass with or without the fix. */
+{
+  /* Sliced by index rather than a regex: this string is a template literal, so
+     a backslash-escaped character class inside it would arrive mangled. */
+  const probe = [
+    'const fs = require("fs");',
+    'const src = fs.readFileSync(' + JSON.stringify(path.join(ROOT, 'js/core.js')) + ', "utf8");',
+    'const start = src.indexOf("function toDate");',
+    'const body = src.slice(start, src.indexOf("\\n  }", start) + 4);',
+    'const toDate = new Function("return " + body.replace("function toDate", "function"))();',
+    'const fmt = (v) => { const d = toDate(v);',
+    '  return d ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "null"; };',
+    'console.log([fmt("2026-10-05"), fmt("2026-11-08"), fmt("2026-11-29")].join("|"));'
+  ].join('\n');
+  const want = '5 Oct 2026|8 Nov 2026|29 Nov 2026';
+  ['America/New_York', 'Pacific/Honolulu', 'Europe/London'].forEach((tz) => {
+    const got = execFileSync(process.execPath, ['-e', probe], {
+      env: Object.assign({}, process.env, { TZ: tz }), encoding: 'utf8'
+    }).trim();
+    if (got === want) pass('timeline: calendar dates read the same in ' + tz);
+    else fail('timeline: calendar dates read the same in ' + tz, 'got ' + got);
+  });
+}
+
+/* The dates that were superseded when the timeline was finalized. A schedule
+   that is correct in one file and three weeks out of date in another is worse
+   than one that is wrong everywhere, because it cannot be spotted by reading a
+   single page. Nothing outside this test may mention them. */
+{
+  const superseded = [
+    ['1 October 2026', /1 October 2026/i],
+    ['1 November 2026', /1 November 2026|1 Nov 2026/i],
+    ['the ISO form of either', /2026-10-01|2026-11-01/]
+  ];
+  const siteFiles = files.filter((f) => /\.(html|js|md)$/.test(f)
+    && !f.includes(path.sep + 'tests' + path.sep)
+    && !f.includes(path.sep + '.git' + path.sep));
+  superseded.forEach(([label, re]) => {
+    const hits = siteFiles.filter((f) => re.test(fs.readFileSync(f, 'utf8')))
+      .map((f) => path.relative(ROOT, f));
+    if (hits.length) fail('timeline: no file still says ' + label, hits.join(', '));
+    else pass('timeline: no file still says ' + label);
+  });
+}
 
 /* Once registration opens, the countdown is the closing date. Showing
    "Registration opens" to people who have already registered is noise. */

@@ -102,6 +102,31 @@ service cloud.firestore {
                                   .data.get('closesAt', null);
     }
 
+    /* ---------------- Round 2 window ----------------
+       Whether submissions are being accepted, read from abc_config/round2 —
+       the same document the Round 2 page renders its window from. Same
+       reasoning and the same escape hatch as Round 1: advisory while it lives
+       only in the portal, and skipped while Round 2 is still unconfigured. */
+
+    function round2WindowOpen() {
+      return !exists(/databases/$(database)/documents/abc_config/round2)
+             || (round2AfterOpening() && round2BeforeClosing());
+    }
+
+    function round2AfterOpening() {
+      return !(get(/databases/$(database)/documents/abc_config/round2)
+                 .data.get('opensAt', null) is timestamp)
+             || request.time >= get(/databases/$(database)/documents/abc_config/round2)
+                                  .data.get('opensAt', null);
+    }
+
+    function round2BeforeClosing() {
+      return !(get(/databases/$(database)/documents/abc_config/round2)
+                 .data.get('closesAt', null) is timestamp)
+             || request.time <= get(/databases/$(database)/documents/abc_config/round2)
+                                  .data.get('closesAt', null);
+    }
+
     /* ---------------- usernames ----------------
      * One document per username, named by the username itself, so that
      * checking whether a name is free is a single read. Anyone may read one:
@@ -261,8 +286,15 @@ service cloud.firestore {
        platform, so no one but the student and the organiser ever reads it. */
     match /abc_round2_submissions/{uid} {
       allow read: if isSelf(uid) || isAdmin();
-      allow create: if isSelf(uid);
-      allow update: if isSelf(uid) || isAdmin();
+      /* Same reasoning as the Round 1 window: the portal hides the form outside
+         10 to 18 Nov, but that is the client, and the client is not the
+         boundary. Skipped entirely until Round 2 is configured, so the rule
+         does not need a document to exist before the round is announced. */
+      allow create: if isSelf(uid) && round2WindowOpen();
+      /* A submitted presentation is locked once it is in, so a link cannot be
+         swapped after the deadline. The team can still reopen it by editing as
+         an administrator, which is the deliberate escape hatch. */
+      allow update: if (isSelf(uid) && round2WindowOpen()) || isAdmin();
       allow delete: if isSelf(uid) || isAdmin();
     }
 

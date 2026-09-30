@@ -115,7 +115,7 @@
            <div><span class="figure-label">Location</span><span class="figure-value" style="font-size:1.1rem">${A.esc(finale.city || (config && config.grandFinaleCity) || 'Karachi')}</span></div>
            <div><span class="figure-label">Date</span><span class="figure-value" style="font-size:1.1rem">${A.esc(A.toDate(finale.date) ? A.fmtDate(finale.date) : ((config && config.grandFinaleMonth) || 'November 2026'))}</span></div>
          </div>`
-      : `<p style="margin:0">Thirty finalists reach the Grand Finale in Karachi, November 2026. Finalists are confirmed by the Al-Biruni\'s organising team.</p>`;
+      : `<p style="margin:0">Thirty finalists reach the Grand Finale in Karachi on 29 November 2026. Finalists are confirmed by the Al-Biruni\'s organising team.</p>`;
     const gfAction = finaleOpen ? `<a class="btn btn-primary" href="finalist.html">Open finalist area</a>` : '';
 
     /* --- Certificates count --- */

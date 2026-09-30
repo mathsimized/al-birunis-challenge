@@ -64,7 +64,7 @@
         </div>
         <div class="panel-body">
           <div class="callout" style="margin-bottom:1rem">
-            Thirty finalists reach the Grand Finale in Karachi, November 2026. Awards are set per
+            Thirty finalists reach the Grand Finale in Karachi on 29 November 2026. Awards are set per
             category: one winner, one runner-up and one honourable mention.
           </div>
           <div data-finalists></div>

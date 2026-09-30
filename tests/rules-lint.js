@@ -56,6 +56,10 @@ const SPLIT_REQUIRED = [
   ['a missing config does not lock the round shut', /!exists\([\s\S]{0,120}?abc_quizzes\/round1\)/],
   ['and it is enforced when an attempt is opened', /allow create: if isAdmin\(\)[\s\S]{0,200}?round1WindowOpen\(\)/],
   ['an unconfigured deadline is not read as "closed"', /\.data\.get\('opensAt', null\) is timestamp/],
+  ['the Round 2 deadline is enforced too', /function round2BeforeClosing\(\)[\s\S]{0,400}?request\.time <=/],
+  ['it reads the Round 2 config the portal reads', /abc_config\/round2/],
+  ['and a submission is refused outside the window', /abc_round2_submissions[\s\S]{0,700}?allow create: if isSelf\(uid\) && round2WindowOpen\(\)/],
+  ['a submitted presentation is locked once it is in', /abc_round2_submissions[\s\S]{0,700}?allow update: if \(isSelf\(uid\) && round2WindowOpen\(\)\) \|\| isAdmin\(\)/],
 
   ['the admin is identified by the verified email', /function isOrganiser\(\)[\s\S]{0,160}?request\.auth\.token\.email == 'mathsimized@gmail\.com'/],
   ['the organiser can bootstrap their own admin record', /isOrganiser\(\)\s*\?\s*request\.resource\.data\.role == 'admin'/],

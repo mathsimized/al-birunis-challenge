@@ -207,7 +207,7 @@
     </div>
     <div class="footer-base">
       <span>&copy; <span data-year></span> Al-Biruni&rsquo;s Challenge 2026 &middot; by MATHSIMIZED. All rights reserved.</span>
-      <span>Grand Finale &middot; Karachi, November 2026</span>
+      <span>Grand Finale &middot; Karachi, 29 November 2026</span>
     </div>
   </div>
 </footer>`;

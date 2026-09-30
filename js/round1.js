@@ -30,10 +30,13 @@
     return {
       id: 'round1',
       title: 'Round 1 — Rapid-Fire Online Qualifier',
-      /* window — Round 1 is attempted on 1 Nov 2026, the same day students
-         register. The team can move these from the Round 1 settings. */
-      opensAt: '2026-11-01T09:00:00',
-      closesAt: '2026-11-01T23:59:00',
+      /* window — Round 1 runs for the whole of 7 Nov 2026, from midnight to
+         23:59, so a student can sit it whenever suits them that day. This is
+         the window, not the length of a single attempt: timeLimitMinutes below
+         is a separate setting and is left unset. The team can move both from
+         the Round 1 settings. */
+      opensAt: '2026-11-07T00:00:00',
+      closesAt: '2026-11-07T23:59:00',
       /* paper */
       questionCount: null,          /* per attempt, admin-set */
       timeLimitMinutes: null,       /* admin-set */
@@ -53,7 +56,7 @@
       /* null until we confirm the tie-break rule.
          'submission_time' | 'first_to_finish' | 'none' */
       tieBreak: null,
-      /* The window above is date-gated to 1 Nov, so this defaults to open and
+      /* The window above is date-gated to 7 Nov, so this defaults to open and
          the date does the work. Set it to 'closed' from the admin Round 1
          settings to shut the round early. */
       status: 'open'                 /* 'draft' | 'open' | 'closed' */

@@ -63,7 +63,7 @@
               <dt>Time limit</dt><dd data-r1-t>Announced by team</dd>
               <dt>Attempts</dt><dd>One official attempt per student</dd>
               <dt>Progresses</dt><dd data-r1-qual>Top students per category</dd>
-              <dt>Window</dt><dd data-r1-window>To be announced</dd>
+              <dt>Window</dt><dd data-r1-window>7 Nov 2026, 00:00 – 23:59</dd>
             </dl>
           </div>
           <div class="card">
@@ -123,7 +123,7 @@
               <dt>Assessment</dt><dd>Reviewed by the panel, off this website</dd>
               <dt>Judging</dt><dd>Assessed off this website by the panel</dd>
               <dt>Progresses</dt><dd data-r2-qual>Top students per category</dd>
-              <dt>Window</dt><dd data-r2-window>To be announced</dd>
+              <dt>Window</dt><dd data-r2-window>10 Nov 2026 – 18 Nov 2026</dd>
             </dl>
           </div>
           <div class="alert alert-warn">
@@ -151,7 +151,7 @@
         <div>
           <div class="round-index">Round 3 &middot; Grand Finale</div>
           <h2>Build a Better World</h2>
-          <p class="round-tagline">Karachi &middot; November 2026</p>
+          <p class="round-tagline">Karachi &middot; 29 November 2026</p>
           <p>
             Thirty national finalists each build an <strong>individual physical
             model or prototype</strong> using materials provided by Mathsimized, and
@@ -171,7 +171,7 @@
             <h3>Grand Finale at a glance</h3>
             <dl class="kv">
               <dt>Finalists</dt><dd>30 national finalists</dd>
-              <dt>Location</dt><dd data-gf-city>Karachi, November 2026</dd>
+              <dt>Location</dt><dd data-gf-city>Karachi, 29 November 2026</dd>
               <dt>Format</dt><dd>Individual physical model &amp; demonstration</dd>
               <dt>Demonstration</dt><dd>Up to two minutes</dd>
               <dt>Judged by</dt><dd>External judges</dd>
@@ -196,10 +196,10 @@
     <div class="shell">
       <div class="callout" style="max-width:820px;margin-inline:auto;text-align:center">
         <strong>A note on unconfirmed details</strong>
-        The number of Round 1 questions, the time limit, the exact marks, the tie-breaking
-        rule, the Round 2 rubric and the Grand Finale schedule have not been finalised.
-        Rather than guessing, they are configurable by the team and announced before
-        each round opens.
+        The competition dates above are final. A few details are still to be confirmed: the
+        number of Round 1 questions, the length of a single attempt, the exact marks, the
+        tie-breaking rule, the Grand Finale venue and its running schedule. Rather than
+        guessing, they are configurable by the team and announced before each round opens.
       </div>
     </div>
   </section>
@@ -234,17 +234,13 @@ ABC.round1.getQuiz().then(function (q) {
   if ((e = document.querySelector('[data-r1-q]'))) e.textContent = q.questionCount ? q.questionCount + ' questions' : 'Announced by team';
   if ((e = document.querySelector('[data-r1-t]'))) e.textContent = q.timeLimitMinutes ? q.timeLimitMinutes + ' minutes' : 'Announced by team';
   var o = ABC.toDate(q.opensAt), c = ABC.toDate(q.closesAt);
-  if ((e = document.querySelector('[data-r1-window]'))) {
-    e.textContent = (o ? ABC.fmtDate(o) : 'TBA') + (c ? ' – ' + ABC.fmtDate(c) : '');
-  }
+  if ((e = document.querySelector('[data-r1-window]'))) e.textContent = ABC.fmtWindow(o, c);
 });
 
 ABC.round2.getRound2Config().then(function (r2) {
   var e;
   var o = ABC.toDate(r2.opensAt), c = ABC.toDate(r2.closesAt);
-  if ((e = document.querySelector('[data-r2-window]'))) {
-    e.textContent = (o ? ABC.fmtDate(o) : 'TBA') + (c ? ' – ' + ABC.fmtDate(c) : '');
-  }
+  if ((e = document.querySelector('[data-r2-window]'))) e.textContent = ABC.fmtWindow(o, c);
 });
 </script>
 </body>

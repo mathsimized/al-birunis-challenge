@@ -41,6 +41,17 @@
     if (value instanceof Date) return value;
     if (typeof value.toDate === 'function') return value.toDate();
     if (typeof value.seconds === 'number') return new Date(value.seconds * 1000);
+    /* A bare "2026-11-29" is read by the platform as UTC midnight, which is
+       the previous day for anyone west of Greenwich. The date of the Grand
+       Finale is not a moment in time, it is a calendar day, and it should read
+       as the same day to everyone: a student in New York was told the finale
+       was on the 28th. Parsed by hand here, as local midnight, it is the 29th
+       everywhere. Only the date part is affected — a string carrying a time is
+       already unambiguous and is left to the platform. */
+    const bare = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value).trim());
+    if (bare) {
+      return new Date(Number(bare[1]), Number(bare[2]) - 1, Number(bare[3]));
+    }
     const d = new Date(value);
     return isNaN(d.getTime()) ? null : d;
   }
@@ -65,6 +76,22 @@
     return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   }
 
+  /* A competition window, written for a person.
+   *
+   * Round 1 opens at midnight and shuts at midnight, which lands on the same
+   * calendar day. Printing "7 Nov 2026 – 7 Nov 2026" reads like a typo, and
+   * printing the full timestamp twice is worse. So a window inside one day is
+   * written as the day and the hours it covers. */
+  function fmtWindow(openValue, closeValue) {
+    const o = toDate(openValue), c = toDate(closeValue);
+    const sameDay = o && c && o.toDateString() === c.toDateString();
+    if (sameDay) return `${fmtDate(o)}, ${fmtTime(o)} – ${fmtTime(c)}`;
+    if (o && c) return `${fmtDate(o)} – ${fmtDate(c)}`;
+    if (o) return `Opens ${fmtDate(o)}`;
+    if (c) return `Closes ${fmtDate(c)}`;
+    return 'To be announced';
+  }
+
   function fmtRelative(value) {
     const d = toDate(value);
     if (!d) return '—';
@@ -80,7 +107,7 @@
   }
 
   /* value may be a Firestore Timestamp, a Date, ms number, or a
-     datetime-local string such as "2026-10-01T09:00" */
+     datetime-local string such as "2026-03-14T09:00" */
   function toInputValue(value) {
     if (!value) return '';
     const d = toDate(value);
@@ -293,7 +320,7 @@
   global.ABC = global.ABC || {};
   Object.assign(global.ABC, {
     esc, slug, initials, titleCase, trunc,
-    toDate, fmtDate, fmtDateTime, fmtTime, fmtRelative, toInputValue, fmtDuration, pad,
+    toDate, fmtDate, fmtDateTime, fmtTime, fmtRelative, fmtWindow, toInputValue, fmtDuration, pad,
     ordinal, plural, pct, clamp, num, computeRanks,
     debounce, uid, deepClone, groupBy, sortBy, queryParam, redirect, rootPath,
     csvEscape, downloadText, downloadCSV, parseCSV, copyToClipboard,

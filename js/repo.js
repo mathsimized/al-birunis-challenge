@@ -69,24 +69,42 @@
     instagramHandle: '@al_birunis_challenge',
     grandFinaleCity: 'Karachi',
     grandFinaleMonth: 'November 2026',
-    grandFinaleDate: null,          /* admin-set */
+    grandFinaleDate: '2026-11-29',   /* confirmed 29 Nov 2026; venue still TBA */
     grandFinaleVenue: null,         /* admin-set */
     grandFinaleDemoMinutes: 2,      /* confirmed: up to two minutes */
     finalistCount: 30,              /* confirmed: 30 national finalists */
-    registrationOpensAt: '2026-10-01',   /* confirmed 1 Oct 2026 */
-    /* Registration stays open through the whole of 1 Nov 2026, so the final
-       timestamp is 23:59 on the 1st. From 00:00 on the 2nd it is shut. */
-    registrationClosesAt: '2026-11-01T23:59:00',
-    /* Round 1 is attempted on the same day students register, 1 Nov 2026. */
-    round1WindowOpensAt: '2026-11-01T09:00:00',
-    round1WindowClosesAt: '2026-11-01T23:59:00',
+    /* ---------------- the finalized timeline ----------------
+       5 Oct  registration opens, and Brand Ambassador applications close
+       7 Nov  Round 1, open 00:00 to 23:59; registration also shuts 23:59
+       8 Nov  Round 1 results released
+       10 Nov Round 2 opens
+       18 Nov Round 2 submission deadline
+       24 Nov 30 national finalists announced
+       29 Nov Grand Finale, Karachi
+
+       Registration and Round 1 share a closing moment on purpose. A student
+       who registers on the morning of the 7th can go straight into Round 1
+       that afternoon, and one who leaves it to the evening can still do
+       both. Opening registration earlier in October is deliberate: Round 2
+       needs a lead time to prepare. */
+    registrationOpensAt: '2026-10-05',
+    registrationClosesAt: '2026-11-07T23:59:00',
+    /* Round 1 is open for the whole of the 7th, midnight to midnight, not a
+       fixed morning slot. The length of a single attempt is a separate
+       setting (timeLimitMinutes) and is deliberately left unset here. */
+    round1WindowOpensAt: '2026-11-07T00:00:00',
+    round1WindowClosesAt: '2026-11-07T23:59:00',
+    round1ResultsAt: '2026-11-08',
     baApplicationsOpenAt: '2026-09-20', /* confirmed: BA window, separate from registration */
-    baApplicationsCloseAt: '2026-10-05',/* confirmed 5 Oct 2026 */
+    baApplicationsCloseAt: '2026-10-05',
     round1QualifyPerCategory: null, /* intended 100 — admin-set */
     round2QualifyPerCategory: null, /* intended 10  — admin-set */
-    round2OpensAt: null,
-    round2ClosesAt: null,
-    round2ResultsAt: null,
+    /* Nine days to prepare, then a submission deadline. resultsAt is when the
+       finalists are named, which is 24 Nov. */
+    round2OpensAt: '2026-11-10T00:00:00',
+    round2ClosesAt: '2026-11-18T23:59:00',
+    round2ResultsAt: '2026-11-24',
+    finalistsAnnouncedAt: '2026-11-24',
     resultsReleasedToStudents: false,
     announceRegistrationOpen: false,
     announceRound1Open: false,
