@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timeline — Al-Biruni's Challenge 2026</title>
+<meta name="description" content="Every date in Al-Biruni's Challenge 2026 in one place: registration, the Round 1 qualifier on 7 November, results, the Round 2 communication challenge, the finalists, and the Grand Finale in Karachi on 29 November.">
+<meta name="theme-color" content="#642B36">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div data-abc-header></div>
+
+<main id="main">
+  <section class="page-head">
+    <div class="shell">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a><span aria-hidden="true">/</span><span aria-current="page">Timeline</span>
+      </nav>
+      <span class="eyebrow left">The whole schedule</span>
+      <h1>Every date, in one place</h1>
+      <p class="lead">Registration, the qualifier, results, the communication challenge, the finalists and the Grand Finale. What has already happened is marked, and whatever comes next is picked out.</p>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="shell">
+      <div class="timeline-countdown" data-countdown aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:1.5rem">
+    <div class="shell">
+      <div class="grid grid-2" style="gap:3rem;align-items:start">
+        <div>
+          <div class="timeline" data-timeline>
+            <!-- Rendered from the competition config by js/timeline.js. -->
+          </div>
+        </div>
+        <aside class="stack" style="position:sticky;top:100px">
+          <div class="card card-accent">
+            <h3>The three dates to write down</h3>
+            <dl class="kv" data-key-dates>
+              <dt>Register by</dt><dd data-d="registrationClosesAt">7 Nov 2026</dd>
+              <dt>Round 1</dt><dd data-d="round1WindowOpensAt">7 Nov 2026, all day</dd>
+              <dt>Round 2 deadline</dt><dd data-d="round2ClosesAt">18 Nov 2026</dd>
+            </dl>
+            <p class="field-hint" style="margin-top:1rem;margin-bottom:0">
+              Registration and Round 1 both shut at 11:59 PM on 7 November, so you can
+              register that morning and sit the qualifier the same day.
+            </p>
+          </div>
+          <div class="card">
+            <h3>If you can only remember one thing</h3>
+            <p class="small muted" style="margin-top:0">
+              Round 1 is one official attempt. There is no second sitting and no way to
+              ask for a retake, so read the instructions before you begin. The round is
+              open for the whole of 7 November, so there is no need to rush &mdash; sit it
+              when you are ready.
+            </p>
+            <a class="btn btn-outline btn-sm btn-block" style="margin-top:1rem" href="rules.html">Read the rules</a>
+          </div>
+          <div class="card">
+            <h3>Where to go next</h3>
+            <ul class="stack small" style="list-style:none;padding:0;margin:0">
+              <li>&#8226; <a href="how-it-works.html">How it works</a>, step by step</li>
+              <li>&#8226; <a href="rounds.html">The three rounds in detail</a></li>
+              <li>&#8226; <a href="announcements.html">Announcements</a>, where the team posts news</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <div class="ornament-rule shell"><span class="glyph" aria-hidden="true">&#952;</span></div>
+
+  <section class="section section-alt">
+    <div class="shell">
+      <div class="callout" style="max-width:820px;margin-inline:auto;text-align:center">
+        <strong>Some details are still to come</strong>
+        The dates above are final. A few things are not yet settled: the number of Round 1
+        questions, how long a single attempt lasts, the marks, the tie-breaking rule, and
+        the Grand Finale venue and running schedule. We announce those before the round
+        they apply to rather than guessing now.
+      </div>
+    </div>
+  </section>
+</main>
+
+<div data-abc-footer></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/repo.js"></script>
+<script src="js/timeline.js"></script>
+<script src="js/page.js"></script>
+<script>
+ABC.page({ active: 'timeline.html', onConfig: function (cfg) {
+  var e;
+  document.querySelectorAll('[data-d]').forEach(function (el) {
+    var d = ABC.toDate(cfg[el.dataset.d]);
+    el.textContent = d ? ABC.fmtDate(d) : 'To be announced';
+  });
+  ABC.timeline.render(cfg, { mount: '[data-timeline]' });
+  renderCountdown(cfg);
+}});
+
+/* How long is left, in words rather than a ticking clock. A countdown that
+   updates every second is a number nobody reads; this only has to be right
+   when the page is opened. */
+function renderCountdown(cfg) {
+  var host = document.querySelector('[data-countdown]');
+  if (!host) return;
+  var now = Date.now();
+  var targets = [
+    ['Registration closes', cfg.registrationClosesAt],
+    ['Round 1 opens', cfg.round1WindowOpensAt],
+    ['Round 1 results', cfg.round1ResultsAt],
+    ['Round 2 deadline', cfg.round2ClosesAt],
+    ['Grand Finale', cfg.grandFinaleDate]
+  ];
+  host.innerHTML = targets.map(function (row) {
+    var d = ABC.toDate(row[1]);
+    if (!d) return '';
+    var ms = d.getTime() - now;
+    var text, tone = '';
+    if (ms < 0) {
+      var end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
+      if (now <= end) { text = 'Today'; tone = 'badge-ok'; }
+      else { text = 'Passed'; tone = 'badge-muted'; }
+    } else {
+      var days = Math.floor(ms / 86400000);
+      if (days === 0) text = 'Today';
+      else if (days === 1) text = 'Tomorrow';
+      else if (days < 60) text = days + ' days';
+      else text = ABC.fmtDate(d);
+    }
+    return '<div class="card"><div class="figure-value">' + ABC.esc(text) + '</div>'
+      + '<div class="figure-label">' + ABC.esc(row[0]) + '</div>'
+      + '<div class="small muted" style="margin-top:.35rem">' + ABC.esc(ABC.fmtDate(d)) + '</div></div>';
+  }).join('');
+}
+</script>
+</body>
+</html>

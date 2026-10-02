@@ -179,6 +179,7 @@
           <li><a href="${A.rootPath('about.html')}">About the Challenge</a></li>
           <li><a href="${A.rootPath('how-it-works.html')}">How It Works</a></li>
           <li><a href="${A.rootPath('rounds.html')}">The Three Rounds</a></li>
+          <li><a href="${A.rootPath('timeline.html')}">Competition Timeline</a></li>
           <li><a href="${A.rootPath('categories.html')}">Categories</a></li>
           <li><a href="${A.rootPath('prizes.html')}">Prizes &amp; Awards</a></li>
         </ul>

@@ -672,6 +672,7 @@ tr.rank-2 .rank-cell, tr.rank-3 .rank-cell { color: var(--ink-2); }
 .brand-sub { font-size: 0.64rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--gold-600); font-weight: 600; }
 
 .nav-links { display: flex; align-items: center; gap: 0.15rem; list-style: none; margin: 0; padding: 0; }
+.nav-links > li { min-width: 0; }
 .nav-links a {
   display: block; padding: 0.5rem 0.7rem;
   font-size: 0.9rem; font-weight: 500;
@@ -781,6 +782,52 @@ tr.rank-2 .rank-cell, tr.rank-3 .rank-cell { color: var(--ink-2); }
 }
 .timeline-item.done::before { background: var(--gold); }
 .timeline-item h4 { margin: 0 0 0.2rem; }
+
+/* ---------- 15b. Dated timeline ---------- */
+.timeline-events { list-style: none; margin: 0; padding: 0; }
+.timeline-event + .timeline-event { margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1px dotted var(--line-gold); }
+
+/* The date sits on the spine rather than above the text, so a column of dates
+   reads as a column. That is the whole point of the layout: a student scanning
+   it is looking for "what day is it", not for a paragraph. */
+.timeline-body { display: block; }
+.timeline-date {
+  display: inline-flex; align-items: baseline; gap: 0.4rem; margin-bottom: 0.3rem;
+  font-family: var(--serif); line-height: 1;
+}
+.timeline-day { font-size: 1.7rem; font-weight: 700; color: var(--burgundy); }
+.timeline-month { font-size: 0.82rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-600); }
+.timeline-state { margin-bottom: 0.35rem; }
+
+.timeline-item.done .timeline-day { color: var(--muted-2); }
+.timeline-item.done .timeline-month { color: var(--muted-2); }
+.timeline-item.done h4 { color: var(--muted); }
+
+/* Whatever is next gets a gold rule down its side. Not the date that happens
+   to be closest — the next one that has not passed yet — so the pointer is
+   still in the right place on the morning of the day itself. */
+.timeline-item[data-next] .timeline-body {
+  border-left: 2px solid var(--gold); padding-left: 0.9rem; margin-left: -0.15rem;
+}
+.timeline-item[data-next] h4 { color: var(--burgundy); }
+.timeline-now .timeline-day { color: var(--success); }
+.timeline-now .timeline-month { color: var(--success); }
+.timeline-span-note { margin: 0.5rem 0 0; }
+
+/* Compact variant for the home page: the date and the headline only, with the
+   detail kept for the full page. */
+.timeline-compact .timeline-item { padding-bottom: 1.1rem; }
+.timeline-compact .timeline-day { font-size: 1.35rem; }
+.timeline-compact .timeline-event { display: inline; }
+.timeline-compact .timeline-events { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; }
+.timeline-compact .timeline-event + .timeline-event { margin: 0; padding: 0; border: 0; }
+.timeline-compact h4 { font-size: 0.95rem; }
+
+/* The figure strip under the timeline: how long is left, in words. */
+.timeline-countdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+.timeline-countdown .card { padding: 1rem 1.1rem; text-align: center; }
+.timeline-countdown .figure-value { font-family: var(--serif); font-size: 1.6rem; font-weight: 700; color: var(--burgundy); line-height: 1.1; }
+.timeline-countdown .figure-label { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 
 /* ---------- 16. Portal (student) layout ---------- */
 .portal { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 1.75rem; align-items: start; padding: 1.75rem 0 4rem; }

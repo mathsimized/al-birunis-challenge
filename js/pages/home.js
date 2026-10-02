@@ -56,6 +56,7 @@
       const el = $('[data-ba-close]');
       if (el) el.textContent = A.fmtDate(c.baApplicationsCloseAt);
     }
+    A.timeline.render(c, { mount: '[data-timeline]', compact: true });
     const q1 = $('[data-quota-r1]');
     if (q1) q1.textContent = c.round1QualifyPerCategory
       ? 'Top ' + c.round1QualifyPerCategory + ' per category'

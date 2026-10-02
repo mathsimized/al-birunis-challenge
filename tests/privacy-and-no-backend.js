@@ -454,6 +454,47 @@ if (/function fmtWindow\([\s\S]{0,600}?sameDay/.test(read('js/core.js'))) {
   });
 }
 
+/* The timeline exists so a student can read the schedule at a glance. Two
+   things it must be, and one it must not be. */
+[
+  ['there is a timeline page', /Timeline/],
+  /* The footer rather than the header: the public nav carries nine links and
+     already needs most of a 1200px row, so a tenth one is more likely to be
+     squeezed off the end than read. The footer is on every page regardless. */
+  ['it is linked from the footer on every page', /rootPath\('timeline\.html'\)[^>]*>Competition Timeline/],
+  ['the home page carries a short version', /data-timeline/],
+  ['and a link to the full one', /href="timeline\.html"/]
+].forEach(([label, re]) => {
+  const src = read('timeline.html') + read('js/ui.js') + read('index.html') + read('js/timeline.js');
+  if (re.test(src)) pass('timeline page: ' + label);
+  else fail('timeline page: ' + label);
+});
+
+/* The point of building the timeline from the config rather than writing it out
+   in markup is that it cannot go stale. A hardcoded date here would be exactly
+   the second copy of the schedule that this page was meant to remove. */
+{
+  const tl = read('js/timeline.js');
+  if (/20[0-9]{2}-[0-9]{2}-[0-9]{2}/.test(tl)) {
+    fail('timeline page: it reads its dates from the config, not from markup',
+      'js/timeline.js contains a literal date');
+  } else {
+    pass('timeline page: it reads its dates from the config, not from markup');
+  }
+  /* Both ends of every window, or a nine-day round shows only its first day. */
+  if ((tl.match(/until:/g) || []).length >= 2) {
+    pass('timeline page: multi-day rounds show their whole span');
+  } else {
+    fail('timeline page: multi-day rounds show their whole span');
+  }
+  /* Past and next, or the list is just a wall of undated paragraphs. */
+  if (/stateOf/.test(tl) && /data-next/.test(tl) && /'done'/.test(tl) && /'today'/.test(tl)) {
+    pass('timeline page: it marks what has passed and what comes next');
+  } else {
+    fail('timeline page: it marks what has passed and what comes next');
+  }
+}
+
 /* The dates that were superseded when the timeline was finalized. A schedule
    that is correct in one file and three weeks out of date in another is worse
    than one that is wrong everywhere, because it cannot be spotted by reading a
